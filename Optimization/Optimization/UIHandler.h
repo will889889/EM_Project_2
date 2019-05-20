@@ -18,8 +18,11 @@ enum Method
 class UIHandler
 {
 public:
+	UIHandler();
+
 	std::string m_Input;
 	Method m_Method;
 	std::vector<std::string> equations;
+
 	std::vector<std::string> DoMath();	//Method _method, double _initPoint, double _leftBound, double _rightBound
 };
