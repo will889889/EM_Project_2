@@ -25,4 +25,5 @@ public:
 	std::vector<std::string> equations;
 
 	std::vector<std::string> DoMath();	//Method _method, double _initPoint, double _leftBound, double _rightBound
+	std::vector<std::string> TEST();
 };
