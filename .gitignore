@@ -1,6 +1,7 @@
 Debug/
 Debug
 /Debug
+Release/
 WindowsFormsApplication_cpp/Debug
 WindowsFormsApplication_cpp/Debug/
 .vs/WindowsFormsApplication_cpp/v14/.suo
@@ -9,3 +10,18 @@ WindowsFormsApplication_cpp/Debug/
 .vs/WindowsFormsApplication_cpp/v15/Browse.VC.opendb
 .vs/
 .vs
+Optimization/Optimization/Release/DataManager.obj
+Optimization/Optimization/Release/DotNetUitilities.obj
+Optimization/Optimization/Release/MyForm.obj
+Optimization/Optimization/Release/Optimization.log
+Optimization/Optimization/Release/Optimization.tlog/CL.command.1.tlog
+Optimization/Optimization/Release/Optimization.tlog/CL.read.1.tlog
+Optimization/Optimization/Release/Optimization.tlog/CL.write.1.tlog
+Optimization/Optimization/Release/Optimization.tlog/link.command.1.tlog
+Optimization/Optimization/Release/Optimization.tlog/link.read.1.tlog
+Optimization/Optimization/Release/Optimization.tlog/link.write.1.tlog
+Optimization/Optimization/Release/Optimization.tlog/Optimization.lastbuildstate
+Optimization/Optimization/Release/Optimization.tlog/Optimization.write.1u.tlog
+Optimization/Optimization/Release/Optimization.vcxproj.GenerateResource.Cache
+Optimization/Release/Optimization.exe
+Optimization/Release/Optimization.pdb
