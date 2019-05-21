@@ -272,6 +272,12 @@ namespace Optimization {
 		MarshalString(openFileDialog1->FileName, tempFileName);
 		//將檔案路徑名稱傳入dataManager
 		dataManager->SetFileName(tempFileName);
+
+		/*Output->Text = "";
+		Output->Multiline = true;
+		Output->Text += gcnew String(tempFileName.c_str());
+		return;*/
+
 		//從讀取讀取向量資料
 		if (dataManager->LoadEquationData())
 		{
@@ -284,6 +290,7 @@ namespace Optimization {
 			Output->Multiline = true;
 			for (unsigned int i = 0; i < m_UIHandler->equations.size(); i++)
 			{
+				///std::cout << std::to_string(i) << " : " << m_UIHandler->equations[i] << "\n";
 				Output->Text += gcnew String(i.ToString() + " : ");
 				Output->Text += gcnew String(m_UIHandler->equations[i].c_str());
 				Output->Text += Environment::NewLine;

@@ -19,12 +19,13 @@ bool DataManager::LoadEquationData()
 	{
 		//定義讀取檔案字串暫存變數
 		std::string tempSring;
-
+		Equations.clear();
 		//執行讀檔迴圈，並在讀到檔案結尾時結束
 		while (!fin.eof())
 		{
 			//從檔案讀取字串
 			fin >> tempSring;
+			std::cout << tempSring << "\n";
 			//解析到向量標記"V"
 			Equations.push_back(tempSring);
 			//遞增EquationIndex，標記到當前讀取向量ID
