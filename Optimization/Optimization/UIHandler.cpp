@@ -221,22 +221,31 @@ std::vector<std::string> UIHandler::TEST()
 	sstream << m_Input;
 	//	get equation index
 	sstream >> equationIndex;
+
+	std::cout << "Hello\n";
+
 	//	get equation
 	Variables = m_Calculator.LoadFunction(equations[equationIndex]);
+
+	std::cout << "Hello 2\n";
+
 	//	get varsCount (from equation)
 	varsCount = Variables.size();
+
+	std::cout << "Hello 3\n";
+
 	//	get initPoint
-	initPoint.clear();
+	/*initPoint.clear();
 	for (int i = 0; i < varsCount; i++)
 	{
 		double in;
 		sstream >> in;
 		initPoint.push_back(in);
-	}
+	}*/
 
 	Answer.push_back("Func: " + equations[equationIndex]);
 	Answer.push_back("VarsCount = " + std::to_string(varsCount));
-	Answer.push_back("Value = " + std::to_string(CalculateByCoordinate(initPoint)));
+	//Answer.push_back("Value = " + std::to_string(CalculateByCoordinate(initPoint)));
 
 	//Answer.push_back(std::to_string(goldenSectionSearch(-0.5, (5.0*resphi - 0.5), 4.5, 0.00000001)) + " <- ans");
 	//Answer.push_back(std::to_string(goldenSectionSearch(0.3, (2.7*resphi + 0.3), 3.0, 0.00000001)) + " <- ans");
