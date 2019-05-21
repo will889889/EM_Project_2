@@ -220,17 +220,17 @@ std::vector<std::string> UIHandler::TEST()
 	std::cout << "Hello 3\n";
 
 	//	get initPoint
-	/*initPoint.clear();
+	initPoint.clear();
 	for (int i = 0; i < varsCount; i++)
 	{
 		double in;
 		sstream >> in;
 		initPoint.push_back(in);
-	}*/
+	}
 
 	Answer.push_back("Func: " + equations[equationIndex]);
 	Answer.push_back("VarsCount = " + std::to_string(varsCount));
-	//Answer.push_back("Value = " + std::to_string(CalculateByCoordinate(initPoint)));
+	Answer.push_back("Value = " + std::to_string(CalculateByCoordinate(initPoint)));
 
 	//Answer.push_back(std::to_string(goldenSectionSearch(-0.5, (5.0*resphi - 0.5), 4.5, 0.00000001)) + " <- ans");
 	//Answer.push_back(std::to_string(goldenSectionSearch(0.3, (2.7*resphi + 0.3), 3.0, 0.00000001)) + " <- ans");
