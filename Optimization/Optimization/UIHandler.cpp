@@ -1,5 +1,6 @@
 #include "UIHandler.h"
 #include <sstream>
+#include "Mathemagic.cpp"
 
 std::pair<double, double> FindInterval(std::vector<double> & _vector, std::vector<double> & _origin, std::vector<std::pair<double, double>> & _intervals)
 {
@@ -111,21 +112,7 @@ std::vector<std::string> UIHandler::DoMath()
 		break;
 	}
 
-	std::string initString;
-	initString = "init : \t[ ";
-	for (int i = 0; i < varsCount; i++)
-	{
-		initString += std::to_string(initPoint[i]);
-
-		if (i == (varsCount - 1))
-		{
-			initString += " ]";
-			continue;
-		}
-		initString += " ,\t";
-	}
-
-	Answer.push_back(initString);
+	Answer.push_back("init : \t" + Vector2String(initPoint));
 	for (int i = 0; i < varsCount; i++)
 	{
 		Answer.push_back("bound : \t[ " + std::to_string(intervals[i].first) + " ,\t" + std::to_string(intervals[i].second) + " ]");
@@ -281,6 +268,8 @@ void UIHandler::FixEquation()
 std::vector<std::string> UIHandler::Powell_method()
 {
 	std::vector<std::string> Info;
+	Answer.push_back("");
+	Answer.push_back("");
 
 	std::vector<std::vector<double>> Directions;
 	Directions.clear();
@@ -300,8 +289,9 @@ std::vector<std::string> UIHandler::Powell_method()
 	}
 	//
 	Position = initPoint;
+	
 	std::vector<double> LastPosition;
-	double Value;
+	double Value = CalculateByCoordinate(Position);
 	double LastValue;
 
 	double DELTA_X_THRESHOLD = 0.00000001;
@@ -310,12 +300,17 @@ std::vector<std::string> UIHandler::Powell_method()
 	for (int iter = 1; iter < ITER_THRESHOLD; iter++)
 	{
 		//	j = ?
+		Answer.push_back("j = " + std::to_string(iter));
 
 		LastPosition = Position;
+		LastValue = Value;
 
 		//	The "Step 2"
 		for (int i = 0; i < varsCount; i++)
 		{
+			Answer.push_back("i = " + std::to_string(i));
+			Answer.push_back("X: " + Vector2String(Position));
+
 			double Coefficient;
 			std::pair<double, double> Interval;
 			Interval = FindInterval(Directions[i], Position, intervals);
@@ -323,38 +318,57 @@ std::vector<std::string> UIHandler::Powell_method()
 			Direction = Directions[i];
 			Coefficient = goldenSectionSearch(Interval.first, Interval.first + ((Interval.second - Interval.first)*resphi), Interval.second, DELTA_Y_THRESHOLD);
 			
-			///	have a vector
-			///	have a origin coordinate
-			///	have all intervals of all coordinates
-			///	(get the interval of the coefficient of the vector)
-			///	(find the exact coefficient)
+			Position = v_Sum(Position, v_Multiply(Direction, Coefficient));
 
+			///v	have a vector
+			///v	have a origin coordinate
+			///v	have all intervals of all coordinates
+			///v	(get the interval of the coefficient of the vector)
+			///v	(find the exact coefficient)
+			///v	apply coef
+
+			///	print position change
+			///	print X, alpha, S
 		}
-		//	threshold
-		/*if ()
+		Answer.push_back("i = " + std::to_string(varsCount));
+		Answer.push_back("X: " + Vector2String(Position));
+
+		Value = CalculateByCoordinate(Position);
+
+		//	quadra scheme~
+		for (int i = 0; i < (varsCount-1); i++)
+		{
+			Directions[i] = Directions[i + 1];
+		}
+		Direction = v_Subtract(Position, LastPosition);
+		Directions[varsCount - 1] = Direction;
+		
+		//	Golden again
+		double Coefficient;
+		std::pair<double, double> Interval;
+		Interval = FindInterval(Direction, Position, intervals);
+		Coefficient = goldenSectionSearch(Interval.first, Interval.first + ((Interval.second - Interval.first)*resphi), Interval.second, DELTA_Y_THRESHOLD);
+		Position = v_Sum(Position, v_Multiply(Direction, Coefficient));
+
+		Answer.push_back("");
+		Answer.push_back("Alpha?: " + std::to_string(Coefficient));
+		Answer.push_back("S: " + Vector2String(Direction));
+		Answer.push_back("X: " + Vector2String(Position));
+		Answer.push_back("");
+
+		//	threshold ("Step 3"?)
+		if (DeltaVector(Position, LastPosition) < DELTA_X_THRESHOLD || std::abs(Value-LastValue) < DELTA_Y_THRESHOLD)
 		{
 			break;
-		}*/
+		}
 	}
+
 
 
 	//	minimizer
 	Answer.push_back("");
 	Answer.push_back("minimizer:");
-	std::string miniString;
-	miniString = "[ ";
-	for (int i = 0; i < varsCount; i++)
-	{
-		miniString += std::to_string(Position[i]);
-
-		if (i == (varsCount - 1))
-		{
-			miniString += " ]";
-			continue;
-		}
-		miniString += " ,\t";
-	}
-	Answer.push_back(miniString);
+	Answer.push_back(Vector2String(Position));
 	//	value
 	Answer.push_back("value:");
 	///Answer.push_back(std::to_string(f(Position)));
