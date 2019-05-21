@@ -15,5 +15,5 @@ public:
 
 private:
 	Term* currentFunc;
-	
+	Term* LoadTerm(std::string input);
 };
