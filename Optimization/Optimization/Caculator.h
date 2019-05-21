@@ -2,6 +2,7 @@
 #include"DataStructure.h"
 #include<string>
 #include<map>
+#include<sstream>
 
 class Caculator
 {
