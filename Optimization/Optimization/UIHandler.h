@@ -42,5 +42,7 @@ public:
 	double goldenSectionSearch(double a, double b, double c, double tau);
 	double CalculateByCoef(double coef);
 	double CalculateByCoordinate(std::vector<double> coor);
+
 	std::vector<std::string> TEST();
+	void FixEquation();
 };

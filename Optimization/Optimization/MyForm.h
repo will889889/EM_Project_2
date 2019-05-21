@@ -346,6 +346,7 @@ namespace Optimization {
 
 		m_UIHandler->m_Input = tempStr;
 	}
+	//	[Calculate]
 	private: System::Void button1_Click(System::Object^  sender, System::EventArgs^  e)
 	{
 		std::vector<std::string> answers;
@@ -363,16 +364,13 @@ namespace Optimization {
 			Output->Text += Environment::NewLine;
 		}
 	}
+	//	[Clear]
 	private: System::Void button2_Click(System::Object^  sender, System::EventArgs^  e)
 	{
 		Output->Multiline = true;
 		
 		Output->Text = "";
-		/*for (int i = 0; i < 200; i++)
-		{
-			Output->Text += gcnew String(i.ToString());
-			Output->Text += Environment::NewLine;
-		}*/
+
 		for (unsigned int i = 0; i < m_UIHandler->equations.size(); i++)
 		{
 			Output->Text += gcnew String(i.ToString() + " : ");
@@ -380,17 +378,17 @@ namespace Optimization {
 			Output->Text += Environment::NewLine;
 		}
 	}
+	//	[Fix]
 	private: System::Void button3_Click(System::Object^  sender, System::EventArgs^  e) 
 	{
 		//	fix equation
-
+		m_UIHandler->FixEquation();
 		//	output
 		Output->Multiline = true;
 		Output->Text = "";
-		for (unsigned int i = 0; i < m_UIHandler->equations.size(); i++)
+		for (unsigned int i = 0; i < m_UIHandler->Answer.size(); i++)
 		{
-			Output->Text += gcnew String(i.ToString() + " : ");
-			Output->Text += gcnew String(m_UIHandler->equations[i].c_str());
+			Output->Text += gcnew String(m_UIHandler->Answer[i].c_str());
 			Output->Text += Environment::NewLine;
 		}
 	}

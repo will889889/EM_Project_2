@@ -244,6 +244,25 @@ std::vector<std::string> UIHandler::TEST()
 	return Answer;
 }
 
+void UIHandler::FixEquation()
+{
+	Answer.clear();
+
+	std::stringstream sstream;
+
+	sstream << m_Input;
+	//	get equation index
+	sstream >> equationIndex;
+
+	Answer.push_back("Equation [" + std::to_string(equationIndex) + "] fixed.");
+	Answer.push_back("from\t" + equations[equationIndex]);
+
+	sstream >> equations[equationIndex];
+
+	Answer.push_back("to\t" + equations[equationIndex]);
+	Answer.push_back("(Click 'Clear' to reload)");
+}
+
 //	Powell¡¦s "quadratically" convergent method
 std::vector<std::string> UIHandler::Powell_method()
 {
@@ -297,8 +316,6 @@ std::vector<std::string> UIHandler::Powell_method()
 			///	(find the exact coefficient)
 
 		}
-
-
 		//	threshold
 		/*if ()
 		{
