@@ -139,6 +139,7 @@
     <ClCompile Include="Caculator.cpp" />
     <ClCompile Include="DataManager.cpp" />
     <ClCompile Include="DotNetUitilities.cpp" />
+    <ClCompile Include="Mathemagic.cpp" />
     <ClCompile Include="MyForm.cpp" />
     <ClCompile Include="UIHandler.cpp" />
   </ItemGroup>
