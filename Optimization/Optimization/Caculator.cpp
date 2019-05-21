@@ -68,6 +68,7 @@ std::vector<char> Caculator::LoadFunction(string input)
 		curTerm->coe = coe * sign;
 
 		// 檢查是否為變數 ###可能是特殊函式形式?
+		Variable* totalvar = NULL;
 		Variable* lastvar = NULL;
 		while (input[i] == '*' || (!has_coe))
 		{
@@ -83,16 +84,18 @@ std::vector<char> Caculator::LoadFunction(string input)
 			curVar->FuncPara = NULL;
 
 			if (lastvar != NULL)
+			{
 				lastvar->next = curVar;
-			else
 				lastvar = curVar;
+			}
+			else
+			{
+				totalvar = lastvar = curVar;
+			}
 
 			// 同時記錄變數名稱
 			if (find(output.begin(), output.end(), input[i]) == output.end())
 				output.push_back(input[i]);
-
-			// 連接Term
-			curTerm->vars = curVar;
 
 			// 檢查是否為特殊fuction
 			if (i + 2 < inputLen)
@@ -139,6 +142,8 @@ std::vector<char> Caculator::LoadFunction(string input)
 			if (i >= inputLen)
 				break;
 		}
+		// 連接Term
+		curTerm->vars = totalvar;
 	}
 
 	currentFunc = func;
