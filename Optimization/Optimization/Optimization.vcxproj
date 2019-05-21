@@ -136,13 +136,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Caculator.cpp" />
     <ClCompile Include="DataManager.cpp" />
     <ClCompile Include="DotNetUitilities.cpp" />
     <ClCompile Include="MyForm.cpp" />
     <ClCompile Include="UIHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Caculator.h" />
     <ClInclude Include="DataManager.h" />
+    <ClInclude Include="DataStructure.h" />
     <ClInclude Include="DotNetUtilities.h" />
     <ClInclude Include="MyForm.h">
       <FileType>CppForm</FileType>
