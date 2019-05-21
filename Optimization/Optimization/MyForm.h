@@ -386,6 +386,15 @@ namespace Optimization {
 		//	output
 		Output->Multiline = true;
 		Output->Text = "";
+
+		for (unsigned int i = 0; i < m_UIHandler->equations.size(); i++)
+		{
+			Output->Text += gcnew String(i.ToString() + " : ");
+			Output->Text += gcnew String(m_UIHandler->equations[i].c_str());
+			Output->Text += Environment::NewLine;
+		}
+
+		Output->Text += Environment::NewLine;
 		for (unsigned int i = 0; i < m_UIHandler->Answer.size(); i++)
 		{
 			Output->Text += gcnew String(m_UIHandler->Answer[i].c_str());

@@ -263,6 +263,11 @@ void UIHandler::FixEquation()
 	//	get equation index
 	sstream >> equationIndex;
 
+	while (equationIndex >= equations.size())
+	{
+		equations.push_back("[new equation]");
+	}
+
 	Answer.push_back("Equation [" + std::to_string(equationIndex) + "] fixed.");
 	Answer.push_back("from\t" + equations[equationIndex]);
 
