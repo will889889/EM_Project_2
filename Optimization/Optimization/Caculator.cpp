@@ -22,8 +22,11 @@ std::vector<char> Caculator::LoadFunction(string input)
 		curTerm->vars = NULL;
 		curTerm->next = NULL;
 		// 連接上一個Term
-		if (last != NULL)
+		if (last != NULL) 
+		{
 			last->next = curTerm;
+			last = curTerm;
+		}
 		else
 			func = last = curTerm;
 
@@ -70,6 +73,7 @@ std::vector<char> Caculator::LoadFunction(string input)
 		{
 			if(has_coe)
 				i++;
+			has_coe = true;
 			// 是變數, 則產生Var
 			Variable* curVar = new Variable;
 			curVar->name = input[i];
@@ -84,7 +88,7 @@ std::vector<char> Caculator::LoadFunction(string input)
 				lastvar = curVar;
 
 			// 同時記錄變數名稱
-			if (find(output.begin(), output.end(), input[i]) != output.end())
+			if (find(output.begin(), output.end(), input[i]) == output.end())
 				output.push_back(input[i]);
 
 			// 連接Term
@@ -101,17 +105,20 @@ std::vector<char> Caculator::LoadFunction(string input)
 				{
 					curVar->type = FuncType::cosFunc;
 				}
-				int endPos = input.find(')', i + 2);
-				string infuncstr = input.substr(i + 4, endPos - i - 4);
-				Term* infuncTerm = LoadTerm(infuncstr);
-				curVar->FuncPara = infuncTerm;
+				if (curVar->type != FuncType::nonFunc)
+				{
+					int endPos = input.find(')', i + 2);
+					string infuncstr = input.substr(i + 4, endPos - i - 4);
+					Term* infuncTerm = LoadTerm(infuncstr);
+					curVar->FuncPara = infuncTerm;
+				}
 			}
 
 			// 繼續取下一字元
 			i++;
 
 			// 檢查是否有次方
-			if ((i >= inputLen) && input[i] == '^')
+			if ((i < inputLen) && input[i] == '^')
 			{
 				i++;
 				// 將數字全部讀完 
