@@ -1,5 +1,50 @@
 #include "UIHandler.h"
 #include <sstream>
+//#include <limits.h>
+
+std::pair<double, double> FindInterval(std::vector<double> & _vector, std::vector<double> & _origin, std::vector<std::pair<double, double>> & _intervals)
+{
+	std::vector<std::pair<double, double>> bounds;
+	bounds.clear();
+
+	//	find each bound of unit
+	for (int i = 0; i < _vector.size(); i++)
+	{
+		std::pair<double, double> bound;
+
+		if (_vector[i] == 0)
+		{
+			bound.first = -DBL_MAX;
+			bound.second = DBL_MAX;
+		}
+		else
+		{
+			bound.first = (_intervals[i].first - _origin[i]) / _vector[i];
+			bound.second = (_intervals[i].second - _origin[i]) / _vector[i];
+
+			if (bound.first > bound.second)
+			{
+				double temp = bound.first;
+				bound.first = bound.second;
+				bound.second = temp;
+			}
+		}
+
+		bounds.push_back(bound);
+	}
+
+	std::pair<double, double> FixedBound;
+	FixedBound = bounds[0];
+	for (int i = 1; i < _vector.size(); i++)
+	{
+		if (FixedBound.first < bounds[i].first)
+			FixedBound.first = bounds[i].first;
+		if (FixedBound.second > bounds[i].second)
+			FixedBound.second = bounds[i].second;
+	}
+
+	return FixedBound;
+}
 
 UIHandler::UIHandler()
 {
@@ -10,22 +55,26 @@ UIHandler::UIHandler()
 
 std::vector<std::string> UIHandler::DoMath()
 {
-	std::vector<std::string> Answer;
-	Answer.clear();
-
 	std::stringstream sstream;
-	///	get these
-	int equationIndex;
-	double initPoint;
-	std::vector< std::pair<double, double> > intervals;
 
 	sstream << m_Input;
+	//	get equation
 	sstream >> equationIndex;
 	/// variable amount needed
-	sstream >> initPoint;
-
 	///	Equation analysis >> get variable amount
-	int varsCount = 2; ///
+	//	get varsCount (from equation)
+	varsCount = 2; ///
+	///
+
+	//	get initPoint
+	initPoint.clear();
+	for (int i = 0; i < varsCount; i++)
+	{
+		double in;
+		sstream >> in;
+		initPoint.push_back(in);
+	}
+	//	get intervals
 	intervals.clear();
 	for (int i = 0; i < varsCount; i++)
 	{
@@ -35,25 +84,27 @@ std::vector<std::string> UIHandler::DoMath()
 		intervals.push_back(interval);
 	}
 
+
+	Answer.clear();
 	switch (m_Method)
 	{
 	case Powell:
-		Answer.push_back("[Powell] : " + equations[equationIndex]);
-		
+		Answer.push_back("[Powell] : \t" + equations[equationIndex]);
+
 		break;
 	case Newton:
-		Answer.push_back("[Newton] : " + equations[equationIndex]);
+		Answer.push_back("[Newton] : \t" + equations[equationIndex]);
 		break;
 	case SteepDescent:
-		Answer.push_back("[SteepDescent] : " + equations[equationIndex]);
+		Answer.push_back("[SteepDescent] : \t" + equations[equationIndex]);
 
 		break;
 	case QuasiNewton:
-		Answer.push_back("[QuasiNewton] : " + equations[equationIndex]);
+		Answer.push_back("[QuasiNewton] : \t" + equations[equationIndex]);
 
 		break;
 	case ConjugateGradient:
-		Answer.push_back("[ConjugateGradient] : " + equations[equationIndex]);
+		Answer.push_back("[ConjugateGradient] : \t" + equations[equationIndex]);
 
 		break;
 	default:
@@ -63,19 +114,30 @@ std::vector<std::string> UIHandler::DoMath()
 		break;
 	}
 
-	Answer.push_back("init : " + std::to_string(initPoint));
+	std::string initString;
+	initString = "init : \t[ ";
 	for (int i = 0; i < varsCount; i++)
 	{
-		Answer.push_back("bound : [" + std::to_string(intervals[i].first) + " , " + std::to_string(intervals[i].first) + "]");
+		initString += std::to_string(initPoint[i]);
+
+		if (i == (varsCount - 1))
+		{
+			initString += " ]";
+			continue;
+		}
+		initString += " ,\t";
+	}
+
+	Answer.push_back(initString);
+	for (int i = 0; i < varsCount; i++)
+	{
+		Answer.push_back("bound : \t[ " + std::to_string(intervals[i].first) + " ,\t" + std::to_string(intervals[i].second) + " ]");
 	}
 	Answer.push_back("");
-	Answer.push_back("ans...\nblahblahblah");
+	Answer.push_back("ans...blahblahblah");
 
 	return Answer;
 }
-
-
-std::vector<std::string> Answer;
 
 #pragma region GoldenSection
 //	The function
@@ -170,8 +232,91 @@ std::vector<std::string> UIHandler::TEST()
 	Answer.clear();
 	Iter_Count = 0;
 
+
+
 	//Answer.push_back(std::to_string(goldenSectionSearch(-0.5, (5.0*resphi - 0.5), 4.5, 0.00000001)) + " <- ans");
 	Answer.push_back(std::to_string(goldenSectionSearch(0.3, (2.7*resphi + 0.3), 3.0, 0.00000001)) + " <- ans");
 
 	return Answer;
+}
+
+//	Powell¡¦s "quadratically" convergent method
+std::vector<std::string> UIHandler::Powell_method()
+{
+	std::vector<std::vector<double>> Directions;
+	Directions.clear();
+	//	set all directions to unit vectors
+	for (int i = 0; i < varsCount; i++)
+	{
+		std::vector<double> direction;
+		direction.clear();
+		for (int j = 0; j < varsCount; j++)
+		{
+			if (i == j)
+				direction.push_back(1.0);
+			else
+				direction.push_back(0.0);
+		}
+		Directions.push_back(direction);
+	}
+
+	std::vector<double> Position = initPoint;
+	std::vector<double> LastPosition;
+	double Value;
+	double LastValue;
+
+	double DELTA_X_THRESHOLD = 0.00000001;
+	double DELTA_Y_THRESHOLD = 0.00000001;
+	int ITER_THRESHOLD = 10000;
+	for (int iter = 1; iter < ITER_THRESHOLD; iter++)
+	{
+		//	j = ?
+
+		LastPosition = Position;
+
+		//	The "Step 2"
+		for (int i = 0; i < varsCount; i++)
+		{
+			double Coefficient;
+			std::pair<double, double> Interval;
+			Interval = FindInterval(Directions[i], Position, intervals);
+			Coefficient = goldenSectionSearch(Interval.first, Interval.first + ((Interval.second - Interval.first)*resphi), Interval.second, DELTA_Y_THRESHOLD);
+			
+			///	have a vector
+			///	have a origin coordinate
+			///	have all intervals of all coordinates
+			///	(get the interval of the coefficient of the vector)
+			///	(find the exact coefficient)
+
+		}
+
+
+		//	threshold
+		/*if ()
+		{
+			break;
+		}*/
+	}
+
+
+	//	minimizer
+	Answer.push_back("");
+	Answer.push_back("minimizer:");
+	std::string miniString;
+	miniString = "[ ";
+	for (int i = 0; i < varsCount; i++)
+	{
+		miniString += std::to_string(Position[i]);
+
+		if (i == (varsCount - 1))
+		{
+			miniString += " ]";
+			continue;
+		}
+		miniString += " ,\t";
+	}
+	Answer.push_back(miniString);
+	//	value
+	Answer.push_back("value:");
+	///Answer.push_back(std::to_string(f(Position)));
 }

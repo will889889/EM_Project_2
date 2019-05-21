@@ -328,8 +328,8 @@ namespace Optimization {
 		std::vector<std::string> answers;
 
 		//	call m_UIHandler
-		///answers = m_UIHandler->DoMath();
-		answers = m_UIHandler->TEST();
+		answers = m_UIHandler->DoMath();
+		///answers = m_UIHandler->TEST();
 
 		Output->Multiline = true;
 
