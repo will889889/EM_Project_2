@@ -6,8 +6,10 @@ Caculator::Caculator()
 	currentFunc = NULL;
 }
 
-void Caculator::LoadFunction(string input)
+std::vector<char> Caculator::LoadFunction(string input)
 {
+	vector<char> output;
+
 	int inputLen = input.length();
 	int i = 0;
 	Term* func = NULL;
@@ -41,10 +43,12 @@ void Caculator::LoadFunction(string input)
 		}
 
 		// 檢查是否為數字
+		bool has_coe = false;
 		double coe = 1.0f;	// 預設為1.0
 		if (input[i] >= 48 && input[i] <= 57)
 		{
 			// 是數字, 則把整串數字(含小數點)讀完
+			has_coe = true;
 			string str_coe = "";
 			while ((input[i] >= 48 && input[i] <= 57) || input[i] == '.')
 			{
@@ -62,9 +66,10 @@ void Caculator::LoadFunction(string input)
 
 		// 檢查是否為變數 ###可能是特殊函式形式?
 		Variable* lastvar = NULL;
-		while (input[i] == '*')
+		while (input[i] == '*' || (!has_coe))
 		{
-			i++;
+			if(has_coe)
+				i++;
 			// 是變數, 則產生Var
 			Variable* curVar = new Variable;
 			curVar->name = input[i];
@@ -75,6 +80,10 @@ void Caculator::LoadFunction(string input)
 				lastvar->next = curVar;
 			else
 				lastvar = curVar;
+
+			// 同時記錄變數名稱
+			if (find(output.begin(), output.end(), input[i]) != output.end())
+				output.push_back(input[i]);
 
 			// 連接Term
 			curTerm->vars = curVar;
