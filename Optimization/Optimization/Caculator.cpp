@@ -114,6 +114,7 @@ std::vector<char> Caculator::LoadFunction(string input)
 	}
 
 	currentFunc = func;
+	return output;
 }
 
 double Caculator::Caculate(map<char, double> input)
