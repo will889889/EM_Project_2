@@ -53,6 +53,9 @@
     <ClInclude Include="DataStructure.h">
       <Filter>標頭檔</Filter>
     </ClInclude>
+    <ClInclude Include="Mathemagic.h">
+      <Filter>標頭檔</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="MyForm.resx">

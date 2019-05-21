@@ -1,5 +1,4 @@
-#include <vector>
-#include <string>
+#include "Mathemagic.h"
 
 std::string Vector2String(std::vector<double> v)
 {

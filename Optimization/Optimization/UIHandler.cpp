@@ -1,6 +1,6 @@
 #include "UIHandler.h"
 #include <sstream>
-#include "Mathemagic.cpp"
+#include "Mathemagic.h"
 
 std::pair<double, double> FindInterval(std::vector<double> & _vector, std::vector<double> & _origin, std::vector<std::pair<double, double>> & _intervals)
 {
@@ -82,13 +82,19 @@ std::vector<std::string> UIHandler::DoMath()
 		intervals.push_back(interval);
 	}
 
-
 	Answer.clear();
+
+	Answer.push_back("init : \t" + Vector2String(initPoint));
+	for (int i = 0; i < varsCount; i++)
+	{
+		Answer.push_back("bound : \t[ " + std::to_string(intervals[i].first) + " ,\t" + std::to_string(intervals[i].second) + " ]");
+	}
+
 	switch (m_Method)
 	{
 	case Powell:
 		Answer.push_back("[Powell] : \t" + equations[equationIndex]);
-
+		Powell_method();
 		break;
 	case Newton:
 		Answer.push_back("[Newton] : \t" + equations[equationIndex]);
@@ -111,14 +117,6 @@ std::vector<std::string> UIHandler::DoMath()
 		return Answer;
 		break;
 	}
-
-	Answer.push_back("init : \t" + Vector2String(initPoint));
-	for (int i = 0; i < varsCount; i++)
-	{
-		Answer.push_back("bound : \t[ " + std::to_string(intervals[i].first) + " ,\t" + std::to_string(intervals[i].second) + " ]");
-	}
-	Answer.push_back("");
-	Answer.push_back("ans...blahblahblah");
 
 	return Answer;
 }
@@ -371,7 +369,7 @@ std::vector<std::string> UIHandler::Powell_method()
 	Answer.push_back(Vector2String(Position));
 	//	value
 	Answer.push_back("value:");
-	///Answer.push_back(std::to_string(f(Position)));
+	Answer.push_back(std::to_string(CalculateByCoordinate(Position)));
 
 	return Info;
 }

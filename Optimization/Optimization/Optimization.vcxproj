@@ -148,6 +148,7 @@
     <ClInclude Include="DataManager.h" />
     <ClInclude Include="DataStructure.h" />
     <ClInclude Include="DotNetUtilities.h" />
+    <ClInclude Include="Mathemagic.h" />
     <ClInclude Include="MyForm.h">
       <FileType>CppForm</FileType>
     </ClInclude>
