@@ -1,6 +1,5 @@
 #include "UIHandler.h"
 #include <sstream>
-//#include <limits.h>
 
 std::pair<double, double> FindInterval(std::vector<double> & _vector, std::vector<double> & _origin, std::vector<std::pair<double, double>> & _intervals)
 {
@@ -140,6 +139,16 @@ std::vector<std::string> UIHandler::DoMath()
 }
 
 #pragma region GoldenSection
+double UIHandler::CalculateByCoef(double coef)
+{
+	std::map<char, double> vars;
+	for (int i = 0; i < varsCount; i++)
+	{
+		
+	}
+
+	return 0.0;
+}
 //	The function
 double f(double x)
 {
@@ -156,7 +165,7 @@ bool Bias_Left;
 int Iter_Threshold = 1000;
 int Iter_Count;
 //	here, tau means the threshold of delta( f(b1), f(b2) )
-double goldenSectionSearch(double a, double b, double c, double tau)
+double UIHandler::goldenSectionSearch(double a, double b, double c, double tau)
 {
 	//	find x (b2)
 	Bias_Left = (std::abs(c - b) > std::abs(b - a));	//	b is on left
@@ -195,6 +204,7 @@ double goldenSectionSearch(double a, double b, double c, double tau)
 			return goldenSectionSearch(x, b, c, tau);
 	}
 }
+
 //double goldenSectionSearch(double a, double b, double c, double tau)
 //{
 //	//Answer.push_back(std::to_string(b));
@@ -259,8 +269,8 @@ std::vector<std::string> UIHandler::Powell_method()
 		}
 		Directions.push_back(direction);
 	}
-
-	std::vector<double> Position = initPoint;
+	//
+	Position = initPoint;
 	std::vector<double> LastPosition;
 	double Value;
 	double LastValue;
@@ -280,6 +290,8 @@ std::vector<std::string> UIHandler::Powell_method()
 			double Coefficient;
 			std::pair<double, double> Interval;
 			Interval = FindInterval(Directions[i], Position, intervals);
+			//	the calculation should know the: Direction, Position
+			Direction = Directions[i];
 			Coefficient = goldenSectionSearch(Interval.first, Interval.first + ((Interval.second - Interval.first)*resphi), Interval.second, DELTA_Y_THRESHOLD);
 			
 			///	have a vector
