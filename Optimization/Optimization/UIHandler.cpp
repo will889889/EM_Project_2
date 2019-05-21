@@ -57,14 +57,12 @@ std::vector<std::string> UIHandler::DoMath()
 	std::stringstream sstream;
 
 	sstream << m_Input;
-	//	get equation
+	//	get equation index
 	sstream >> equationIndex;
-	/// variable amount needed
-	///	Equation analysis >> get variable amount
+	//	get equation
+	Variables = m_Calculator.LoadFunction(equations[equationIndex]);
 	//	get varsCount (from equation)
-	varsCount = 2; ///
-	///
-
+	varsCount = Variables.size();
 	//	get initPoint
 	initPoint.clear();
 	for (int i = 0; i < varsCount; i++)
@@ -141,14 +139,24 @@ std::vector<std::string> UIHandler::DoMath()
 #pragma region GoldenSection
 double UIHandler::CalculateByCoef(double coef)
 {
+	////////	this needs [Variables], [Position], [Direction] from global
 	std::map<char, double> vars;
 	for (int i = 0; i < varsCount; i++)
 	{
-		
+		vars.insert(std::pair<char, double>(Variables[i], Position[i] + Direction[i] * coef));
 	}
-
-	return 0.0;
+	return m_Calculator.Caculate(vars);
 }
+double UIHandler::CalculateByCoordinate(std::vector<double> coor)
+{
+	std::map<char, double> vars;
+	for (int i = 0; i < varsCount; i++)
+	{
+		vars.insert(std::pair<char, double>(Variables[i], coor[i]));
+	}
+	return m_Calculator.Caculate(vars);
+}
+
 //	The function
 double f(double x)
 {
@@ -162,8 +170,6 @@ double resphi = 2 - phi;	// 0.3xx
 double fof_x, fof_b, x;
 bool Bias_Left;
 ///	boost
-int Iter_Threshold = 1000;
-int Iter_Count;
 //	here, tau means the threshold of delta( f(b1), f(b2) )
 double UIHandler::goldenSectionSearch(double a, double b, double c, double tau)
 {
@@ -178,11 +184,11 @@ double UIHandler::goldenSectionSearch(double a, double b, double c, double tau)
 	//Answer.push_back(" x: " + std::to_string(b) + " , b: " + std::to_string(x) + " , ca: " + std::to_string(std::abs(a - c)));
 
 	//	calculate (get y)
-	fof_x = f(x);
-	fof_b = f(b);
+	fof_x = CalculateByCoef(x);
+	fof_b = CalculateByCoef(b);
 
 	//	threshold - delta( f(b1), f(b2) )
-	if ((std::abs(fof_x - fof_b) < tau) || (Iter_Count > Iter_Threshold))
+	if ((std::abs(fof_x - fof_b) < tau))
 		return (x + b) / 2;
 	////	threshold - delta( b1, b2 )
 	//if (std::abs(a - c) < tau)
@@ -204,48 +210,36 @@ double UIHandler::goldenSectionSearch(double a, double b, double c, double tau)
 			return goldenSectionSearch(x, b, c, tau);
 	}
 }
-
-//double goldenSectionSearch(double a, double b, double c, double tau)
-//{
-//	//Answer.push_back(std::to_string(b));
-//	//	find x (b2)
-//	double x;
-//	if (c - b > b - a)
-//		x = b + resphi * (c - b);
-//	else
-//		x = b - resphi * (b - a);
-//
-//	//	threshold
-//	if (std::abs(c - a) < tau * (std::abs(b) + std::abs(x)))
-//		return (c + a) / 2;
-//
-//	//	compare
-//	if (f(x) < f(b))
-//	{
-//		if (c - b > b - a)
-//			return goldenSectionSearch(b, x, c, tau);
-//		else
-//			return goldenSectionSearch(a, x, b, tau);
-//	}
-//	else
-//	{
-//		if (c - b > b - a)
-//			return goldenSectionSearch(a, b, x, tau);
-//		else
-//			return goldenSectionSearch(x, b, c, tau);
-//	}
-//}
 #pragma endregion
 
 std::vector<std::string> UIHandler::TEST()
 {
 	Answer.clear();
-	Iter_Count = 0;
 
+	std::stringstream sstream;
 
+	sstream << m_Input;
+	//	get equation index
+	sstream >> equationIndex;
+	//	get equation
+	Variables = m_Calculator.LoadFunction(equations[equationIndex]);
+	//	get varsCount (from equation)
+	varsCount = Variables.size();
+	//	get initPoint
+	initPoint.clear();
+	for (int i = 0; i < varsCount; i++)
+	{
+		double in;
+		sstream >> in;
+		initPoint.push_back(in);
+	}
+
+	Answer.push_back("Func: " + equations[equationIndex]);
+	Answer.push_back("VarsCount = " + std::to_string(varsCount));
+	Answer.push_back("Value = " + std::to_string(CalculateByCoordinate(initPoint)));
 
 	//Answer.push_back(std::to_string(goldenSectionSearch(-0.5, (5.0*resphi - 0.5), 4.5, 0.00000001)) + " <- ans");
-	Answer.push_back(std::to_string(goldenSectionSearch(0.3, (2.7*resphi + 0.3), 3.0, 0.00000001)) + " <- ans");
+	//Answer.push_back(std::to_string(goldenSectionSearch(0.3, (2.7*resphi + 0.3), 3.0, 0.00000001)) + " <- ans");
 
 	return Answer;
 }
@@ -253,6 +247,8 @@ std::vector<std::string> UIHandler::TEST()
 //	Powell¡¦s "quadratically" convergent method
 std::vector<std::string> UIHandler::Powell_method()
 {
+	std::vector<std::string> Info;
+
 	std::vector<std::vector<double>> Directions;
 	Directions.clear();
 	//	set all directions to unit vectors
@@ -331,4 +327,40 @@ std::vector<std::string> UIHandler::Powell_method()
 	//	value
 	Answer.push_back("value:");
 	///Answer.push_back(std::to_string(f(Position)));
+
+	return Info;
 }
+
+
+#pragma region TrashCan
+//double goldenSectionSearch(double a, double b, double c, double tau)
+//{
+//	//Answer.push_back(std::to_string(b));
+//	//	find x (b2)
+//	double x;
+//	if (c - b > b - a)
+//		x = b + resphi * (c - b);
+//	else
+//		x = b - resphi * (b - a);
+//
+//	//	threshold
+//	if (std::abs(c - a) < tau * (std::abs(b) + std::abs(x)))
+//		return (c + a) / 2;
+//
+//	//	compare
+//	if (f(x) < f(b))
+//	{
+//		if (c - b > b - a)
+//			return goldenSectionSearch(b, x, c, tau);
+//		else
+//			return goldenSectionSearch(a, x, b, tau);
+//	}
+//	else
+//	{
+//		if (c - b > b - a)
+//			return goldenSectionSearch(a, b, x, tau);
+//		else
+//			return goldenSectionSearch(x, b, c, tau);
+//	}
+//}
+#pragma endregion

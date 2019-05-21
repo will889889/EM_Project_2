@@ -33,6 +33,7 @@ namespace Optimization {
 	public:
 	private: System::Windows::Forms::Button^  button1;
 	private: System::Windows::Forms::Button^  button2;
+	private: System::Windows::Forms::Button^  button3;
 
 	protected:
 		/// <summary>
@@ -84,6 +85,7 @@ namespace Optimization {
 			this->fileToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->loadEquationsToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->openFileDialog1 = (gcnew System::Windows::Forms::OpenFileDialog());
+			this->button3 = (gcnew System::Windows::Forms::Button());
 			this->tableLayoutPanel1->SuspendLayout();
 			this->flowLayoutPanel1->SuspendLayout();
 			this->menuStrip1->SuspendLayout();
@@ -112,6 +114,7 @@ namespace Optimization {
 			this->flowLayoutPanel1->Controls->Add(this->comboBox1);
 			this->flowLayoutPanel1->Controls->Add(this->button1);
 			this->flowLayoutPanel1->Controls->Add(this->button2);
+			this->flowLayoutPanel1->Controls->Add(this->button3);
 			this->flowLayoutPanel1->Controls->Add(this->Input);
 			this->flowLayoutPanel1->Controls->Add(this->OutputText);
 			this->flowLayoutPanel1->Controls->Add(this->Output);
@@ -226,6 +229,16 @@ namespace Optimization {
 			this->openFileDialog1->FileName = L"openFileDialog1";
 			this->openFileDialog1->FileOk += gcnew System::ComponentModel::CancelEventHandler(this, &MyForm::openFileDialog1_FileOk);
 			// 
+			// button3
+			// 
+			this->button3->Location = System::Drawing::Point(337, 3);
+			this->button3->Name = L"button3";
+			this->button3->Size = System::Drawing::Size(75, 23);
+			this->button3->TabIndex = 7;
+			this->button3->Text = L"Fix";
+			this->button3->UseVisualStyleBackColor = true;
+			this->button3->Click += gcnew System::EventHandler(this, &MyForm::button3_Click);
+			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(8, 15);
@@ -262,14 +275,17 @@ namespace Optimization {
 		//從讀取讀取向量資料
 		if (dataManager->LoadEquationData())
 		{
-			std::vector<std::string> equations = dataManager->GetEquations();
-			m_UIHandler->equations = equations;
+			/*std::vector<std::string> equations = dataManager->GetEquations();
+			m_UIHandler->equations = equations;*/
+			m_UIHandler->equations.clear();
+			m_UIHandler->equations = dataManager->GetEquations();
 
+			Output->Text = "";
 			Output->Multiline = true;
-			for (unsigned int i = 0; i < equations.size(); i++)
+			for (unsigned int i = 0; i < m_UIHandler->equations.size(); i++)
 			{
 				Output->Text += gcnew String(i.ToString() + " : ");
-				Output->Text += gcnew String(equations[i].c_str());
+				Output->Text += gcnew String(m_UIHandler->equations[i].c_str());
 				Output->Text += Environment::NewLine;
 			}
 		}
@@ -328,8 +344,8 @@ namespace Optimization {
 		std::vector<std::string> answers;
 
 		//	call m_UIHandler
-		answers = m_UIHandler->DoMath();
-		///answers = m_UIHandler->TEST();
+		///answers = m_UIHandler->DoMath();
+		answers = m_UIHandler->TEST();
 
 		Output->Multiline = true;
 
@@ -357,5 +373,19 @@ namespace Optimization {
 			Output->Text += Environment::NewLine;
 		}
 	}
-	};
+	private: System::Void button3_Click(System::Object^  sender, System::EventArgs^  e) 
+	{
+		//	fix equation
+
+		//	output
+		Output->Multiline = true;
+		Output->Text = "";
+		for (unsigned int i = 0; i < m_UIHandler->equations.size(); i++)
+		{
+			Output->Text += gcnew String(i.ToString() + " : ");
+			Output->Text += gcnew String(m_UIHandler->equations[i].c_str());
+			Output->Text += Environment::NewLine;
+		}
+	}
+};
 }
