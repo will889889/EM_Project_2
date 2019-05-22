@@ -211,6 +211,16 @@ std::vector<std::string> UIHandler::TEST()
 
 	//	get equation
 	Variables = m_Calculator.LoadFunction(equations[equationIndex]);
+	
+	// WILL: for test diff
+	/*std::map<char, double> will_input;
+	will_input['x'] = 1.0f;
+	will_input['y'] = 2.0f;
+	will_input['z'] = 3.0f;
+	will_input['a'] = 4.0f;
+	double test_term = m_Calculator.PartialDerivative(m_Calculator.myCurrentFunc(), Variables[0], will_input);
+	*/
+	// WILL end
 
 	std::cout << "Hello 2\n";
 

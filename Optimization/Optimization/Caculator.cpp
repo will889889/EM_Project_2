@@ -6,6 +6,11 @@ Caculator::Caculator()
 	currentFunc = NULL;
 }
 
+Term* Caculator::myCurrentFunc()
+{
+	return currentFunc;
+}
+
 std::vector<char> Caculator::LoadFunction(string input)
 {
 	vector<char> output;
@@ -219,6 +224,118 @@ double Caculator::Caculate(map<char, double> input)
 	return output;
 }
 
+double Caculator::Caculate(Term* caculatee, std::map<char, double> input)
+{
+	Term* memoryFunc = currentFunc;
+	currentFunc = caculatee;
+	double output = Caculate(input);
+	currentFunc = memoryFunc;
+	return output;
+}
+
+Term* Caculator::PartialDiff(Term* inFunc, char toDiff)
+{
+	Term* output = new Term;
+	output->coe = 0.0f;
+	output->vars = NULL;
+	output->next = NULL;
+	Term* curOut = output;
+	Term* curRead = inFunc;
+	while (curRead != NULL)
+	{
+		// 按照每個Term檢查是否包含toDiff, 若沒有則不被寫入curOut.
+
+		// 現在正在讀的var
+		Variable* curReadVar = curRead->vars;
+		// 讀完後保留的var
+		Variable* diffVar = NULL;
+		// 正在讀的var指標
+		Variable* lastDiffVar = diffVar;
+		// 檢查讀完後是否需要保留此Term
+		bool isRemained = false;
+		// 若保留(代表是微分), 則需乘上此參數
+		double remained_coe = 1.0f;
+		while (curReadVar != NULL)
+		{
+			// 讀取每一個變數(預設保留所有變數, 若到最後不是remained再刪掉)
+			
+			// 每個變數都要做為新增的(怕指到input的變數們)
+			Variable* n_var = new Variable(*curReadVar);
+			n_var->next = NULL;
+			
+
+			// 若微分, 且微分後的x係數為0, 則需要將x刪除
+			bool is_turnToConst = false;
+
+			// 根據var的性質做修改 (視作常數的var則不修改)
+			if (curReadVar->name == toDiff)
+			{
+				// 代表此Term會保留
+				isRemained = true;
+				
+				// 將現在的var微分
+				remained_coe = n_var->exp;
+				n_var->exp = n_var->exp - 1.0f;
+				is_turnToConst = (n_var->exp == 0);
+			}
+			else
+			{
+				if (curReadVar->type == FuncType::sinFunc)
+				{
+
+				}
+				else if (curReadVar->type == FuncType::cosFunc)
+				{
+
+				}
+			}
+			
+			// 保留變數
+			if (!is_turnToConst)
+			{
+				if (diffVar == NULL)
+					diffVar = lastDiffVar = n_var;
+				else
+					lastDiffVar->next = n_var;
+				lastDiffVar = lastDiffVar->next;
+			}
+
+			// 讀取下一個
+			curReadVar = curReadVar->next;
+		}
+
+		// 有包含toDiff, 於是寫入
+		if (isRemained)
+		{
+			curOut->next = new Term;
+			curOut = curOut->next;
+			curOut->coe = curRead->coe * remained_coe;
+			curOut->vars = diffVar;
+			curOut->next = NULL;
+		}
+		else
+		{
+			// 無包含, 毀掉全部:D(怕記憶體占用)
+			Destoryer(diffVar);
+		}
+
+		// 準備讀下一個Term
+		curRead = curRead->next;
+	}
+	curOut = output;
+	output = output->next;
+	delete curOut;
+	return output;
+}
+
+double Caculator::PartialDerivative(Term* inFunc, char toDiff, std::map<char, double> input)
+{
+	Term* diffed = PartialDiff(inFunc, toDiff);
+	double output = Caculate(diffed, input);
+	Destoryer(diffed);
+	return output;
+}
+
 Term* Caculator::LoadTerm(string input)
 {
 	int inputLen = input.length();
@@ -345,4 +462,38 @@ vector<char> Caculator::FindVarInTerm(Term* input, vector<char> original)
 		curT = curT->next;
 	}
 	return output;
+}
+
+void Caculator::Destoryer(Term* input)
+{
+	if (input != NULL)
+	{
+		Term* last = input;
+		while (input->next != NULL)
+		{
+			input = input->next;
+			if (last->vars != NULL)
+			{
+				Destoryer(last->vars);
+			}
+			delete last;
+			last = input;
+		}
+		delete last;
+	}
+}
+
+void Caculator::Destoryer(Variable* input)
+{
+	if (input != NULL)
+	{
+		Variable* last = input;
+		while (input->next != NULL)
+		{
+			input = input->next;
+			delete last;
+			last = input;
+		}
+		delete last;
+	}
 }
