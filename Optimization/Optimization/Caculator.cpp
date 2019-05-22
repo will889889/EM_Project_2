@@ -104,16 +104,19 @@ std::vector<char> Caculator::LoadFunction(string input)
 				{
 					curVar->type = FuncType::sinFunc;
 				}
-				else if (input.substr(i, i + 2) == "cos")
+				else if (input.substr(i, 3) == "cos")
 				{
 					curVar->type = FuncType::cosFunc;
 				}
 				if (curVar->type != FuncType::nonFunc)
 				{
+					output.pop_back();
 					int endPos = input.find(')', i + 2);
 					string infuncstr = input.substr(i + 4, endPos - i - 4);
 					Term* infuncTerm = LoadTerm(infuncstr);
 					curVar->FuncPara = infuncTerm;
+					i = endPos;
+					output = FindVarInTerm(infuncTerm, output);
 				}
 			}
 
@@ -156,14 +159,57 @@ double Caculator::Caculate(map<char, double> input)
 	Term* curTerm = currentFunc;
 	while (curTerm != NULL)
 	{
-		double curValue = curTerm->coe;	//作為這一整個term的值
+		//作為這一整個term的值
+		double curValue = curTerm->coe;
 		// 檢查是否為變數
 		if (curTerm->vars != NULL)
 		{
+			// 乘上每個變數(帶入且計算過次方後的值) 例如x*y*z^0.5
 			Variable* curVar = curTerm->vars;
 			while (curVar != NULL)
 			{
-				curValue *= pow(input[curVar->name], curVar->exp);
+				// 檢查是否為函式
+				if (curVar->type == FuncType::nonFunc)
+				{
+					// 非函式
+					curValue *= pow(input[curVar->name], curVar->exp);
+				}
+				else
+				{
+					// 是函式, 將函式內的總Terms計算完, 之後帶入該函式.
+
+					// 目前正在處理的Term
+					Term* funcParas = curVar->FuncPara;
+					// 總共Terms的值
+					double paraValue = 0.0f;
+					// 重複處理每一個Term, 每次轉成數值後加到paraValue
+					while (funcParas != NULL)
+					{
+						//作為這一整個term的值
+						double curVal = funcParas->coe;
+						// 檢查是否為變數
+						if (funcParas->vars != NULL)
+						{
+							// 乘上每個變數(帶入且計算過次方後的值) 例如x*y*z^0.5
+							Variable* cv = funcParas->vars;
+							while (cv != NULL)
+							{
+								// 預設為非函式
+								curVal *= pow(input[cv->name], cv->exp);
+								cv = cv->next;
+							}
+						}
+						paraValue += curVal;
+						funcParas = funcParas->next;
+					}
+
+					// paraValue已經整理好ㄌ 所以把它帶到函式:D
+					if (curVar->type == FuncType::sinFunc)
+						curValue *= sin(paraValue);
+					else if (curVar->type == FuncType::cosFunc)
+						curValue *= cos(paraValue);
+				}
+
 				curVar = curVar->next;
 			}
 		}
@@ -280,4 +326,23 @@ Term* Caculator::LoadTerm(string input)
 		}
 	}
 	return func;
+}
+
+vector<char> Caculator::FindVarInTerm(Term* input, vector<char> original)
+{
+	vector<char> output = original;
+	Term* curT = input;
+	while (curT != NULL)
+	{
+		Variable* curVar = curT->vars;
+		while (curVar != NULL)
+		{
+			// 同時記錄變數名稱
+			if (find(output.begin(), output.end(), curVar->name) == output.end())
+				output.push_back(curVar->name);
+			curVar = curVar->next;
+		}
+		curT = curT->next;
+	}
+	return output;
 }
