@@ -17,10 +17,11 @@ public:
 	Term* PartialDiff(Term* , char);
 	double PartialDerivative(Term*, char, std::map<char, double>);
 
+	void Destoryer(Term*);
+	void Destoryer(Variable*);
+
 private:
 	Term* currentFunc;
 	Term* LoadTerm(std::string input);
 	std::vector<char> FindVarInTerm(Term*, std::vector<char>);
-	void Destoryer(Term*);
-	void Destoryer(Variable*);
 };
