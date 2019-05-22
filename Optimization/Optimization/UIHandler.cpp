@@ -440,6 +440,8 @@ void UIHandler::Newton_method()
 	Answer.push_back(std::to_string(CalculateByCoordinate(Position)));
 }
 
+
+
 #pragma region TrashCan
 //double goldenSectionSearch(double a, double b, double c, double tau)
 //{

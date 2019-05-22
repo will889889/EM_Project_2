@@ -153,7 +153,7 @@ std::vector<char> Caculator::LoadFunction(string input)
 		// ³s±µTerm
 		curTerm->vars = totalvar;
 	}
-
+	Destoryer(currentFunc);
 	currentFunc = func;
 	return output;
 }

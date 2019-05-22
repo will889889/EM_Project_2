@@ -42,6 +42,8 @@ public:
 	double goldenSectionSearch(double a, double b, double c, double tau);
 	void Newton_method();
 
+	void SteepestDescent();
+
 	double CalculateByCoef(double coef);
 	double CalculateByCoordinate(std::vector<double> coor);
 
