@@ -65,9 +65,48 @@ double DeltaVector(std::vector<double> &v1, std::vector<double> &v2)
 	}
 	return sum;
 }
+double Length(std::vector<double>& V)
+{
+	double sum = 0.0;
+	for (int i = 0; i < V.size(); i++)
+	{
+		sum += (V[i] * V[i]);
+	}
+	return std::sqrt(sum);
+}
 
 
 #pragma region Matrix
+
+std::vector<double> CaCuMi::Matrix2Vector(const Matrix & M)
+{
+	std::vector<double> result(M.Data.size());
+
+	for (int i = 0; i < M.Data.size(); i++)
+	{
+		result[i] = M.Data[i][0];
+	}
+
+	return result;
+}
+
+void CaCuMi::PrintMatrix(const Matrix & M, std::vector<std::string>& Answer)
+{
+	Answer.push_back("[");
+	for (int i = 0; i < M.Data.size(); i++)
+	{
+		std::string result = "";
+		for (int j = 0; j < M.Data[i].size(); j++)
+		{
+			result += std::to_string(M.Data[i][j]);
+
+			if (i != (M.Data[i].size() - 1))
+				result += " ,\t";
+		}
+		Answer.push_back(result);
+	}
+	Answer.push_back("]");
+}
 
 const Matrix CaCuMi::Multiply(const Matrix & M1, const Matrix & M2)
 {

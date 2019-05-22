@@ -370,21 +370,64 @@ void UIHandler::Newton_method()
 	for (int i = 0; i < varsCount; i++)
 	{
 		///First_Order[i] = 
+		for (int j = i; j < varsCount; j++)
+		{
+			///Second_Order[i][j] = 
+		}
 	}
-	
+
+	//	vars
 	Matrix Gradient(varsCount, 1);
-	for (int i = 0; i < varsCount; i++)
-	{
-		///Gradient.Data[i][1] = 
-	}
 	Matrix Hessian(varsCount, varsCount);
-	//	get Gradient
-	//	get Hessian
-	//	calc Hessian inverse
-	//	calc delta x
-	//	update position
+	//	thresholds
+	std::vector<double> LastPosition;
+	double DELTA_X_THRESHOLD = 0.00000001;
+	double DELTA_Y_THRESHOLD = 0.00000001;
+	int ITER_THRESHOLD = 1000;
+	for (int iter = 1; iter < ITER_THRESHOLD; iter++)
+	{
+		LastPosition = Position;
 
+		//	get Gradient vals
+		//	get Hessian vals
+		for (int i = 0; i < varsCount; i++)
+		{
+			///Gradient.Data[i][0] = ;
+			for (int j = i; j < varsCount; j++)
+			{
+				///Hessian.Data[i][j] = Hessian.Data[j][i] = ;
+			}
+		}
+		//	print Hessian
+		Answer.push_back("Hessian: ");
+		CaCuMi::PrintMatrix(Hessian, Answer);
+		//	calc Hessian inverse
+		Hessian = CaCuMi::Inverse(Hessian);
+		//	print Hessian inverse
+		Answer.push_back("Hessian Inverse: ");
+		CaCuMi::PrintMatrix(Hessian, Answer);
 
+		//	calc delta X, update position
+		std::vector<double> deltaX = CaCuMi::Matrix2Vector(CaCuMi::Multiply(Hessian, Gradient));
+		Position = v_Subtract(Position, deltaX);
+		//	print position
+		Answer.push_back("X: ");
+		Answer.push_back(Vector2String(Position));
+		Answer.push_back("");
+
+		//	threshold
+		if (Length(deltaX) < DELTA_X_THRESHOLD || DeltaVector(Position, LastPosition) < DELTA_X_THRESHOLD)
+		{
+			break;
+		}
+	}
+	//	minimizer
+	Answer.push_back("");
+	Answer.push_back("minimizer:");
+	Answer.push_back(Vector2String(Position));
+	//	value
+	Answer.push_back("value:");
+	Answer.push_back(std::to_string(CalculateByCoordinate(Position)));
 }
 
 #pragma region TrashCan
