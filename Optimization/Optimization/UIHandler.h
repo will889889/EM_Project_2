@@ -38,8 +38,10 @@ public:
 	std::vector<char> Variables;
 	std::vector<std::string> DoMath();	//Method _method, double _initPoint, double _leftBound, double _rightBound
 
-	std::vector<std::string> Powell_method();
+	void Powell_method();
 	double goldenSectionSearch(double a, double b, double c, double tau);
+	void Newton_method();
+
 	double CalculateByCoef(double coef);
 	double CalculateByCoordinate(std::vector<double> coor);
 
