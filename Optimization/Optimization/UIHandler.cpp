@@ -273,7 +273,7 @@ void UIHandler::FixEquation()
 }
 
 //	Powell¡¦s "quadratically" convergent method
-std::vector<std::string> UIHandler::Powell_method()
+void UIHandler::Powell_method()
 {
 	std::vector<std::string> Info;
 	Answer.push_back("");
@@ -307,7 +307,6 @@ std::vector<std::string> UIHandler::Powell_method()
 	int ITER_THRESHOLD = 10000;
 	for (int iter = 1; iter < ITER_THRESHOLD; iter++)
 	{
-		//	j = ?
 		Answer.push_back("j = " + std::to_string(iter));
 
 		LastPosition = Position;
@@ -327,16 +326,6 @@ std::vector<std::string> UIHandler::Powell_method()
 			Coefficient = goldenSectionSearch(Interval.first, Interval.first + ((Interval.second - Interval.first)*resphi), Interval.second, DELTA_Y_THRESHOLD);
 			
 			Position = v_Sum(Position, v_Multiply(Direction, Coefficient));
-
-			///v	have a vector
-			///v	have a origin coordinate
-			///v	have all intervals of all coordinates
-			///v	(get the interval of the coefficient of the vector)
-			///v	(find the exact coefficient)
-			///v	apply coef
-
-			///	print position change
-			///	print X, alpha, S
 		}
 		Answer.push_back("i = " + std::to_string(varsCount));
 		Answer.push_back("X: " + Vector2String(Position));
@@ -371,8 +360,6 @@ std::vector<std::string> UIHandler::Powell_method()
 		}
 	}
 
-
-
 	//	minimizer
 	Answer.push_back("");
 	Answer.push_back("minimizer:");
@@ -380,10 +367,35 @@ std::vector<std::string> UIHandler::Powell_method()
 	//	value
 	Answer.push_back("value:");
 	Answer.push_back(std::to_string(CalculateByCoordinate(Position)));
-
-	return Info;
 }
 
+void UIHandler::Newton_method()
+{
+	Position = initPoint;
+
+	std::vector<Term> First_Order;
+	std::vector<std::vector<Term>> Second_Order;
+	
+	//	get 1st and 2nd derivertives
+	for (int i = 0; i < varsCount; i++)
+	{
+		///First_Order[i] = 
+	}
+	
+	Matrix Gradient(varsCount, 1);
+	for (int i = 0; i < varsCount; i++)
+	{
+		///Gradient.Data[i][1] = 
+	}
+	Matrix Hessian(varsCount, varsCount);
+	//	get Gradient
+	//	get Hessian
+	//	calc Hessian inverse
+	//	calc delta x
+	//	update position
+
+
+}
 
 #pragma region TrashCan
 //double goldenSectionSearch(double a, double b, double c, double tau)
