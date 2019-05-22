@@ -395,6 +395,13 @@ const Matrix CaCuMi::Adjoint(const Matrix & M)
 
 const Matrix CaCuMi::Inverse(const Matrix & M)
 {
+	if (M.Data.size() == 1)
+	{
+		Matrix one(1, 1);
+		one.Data[0][0] = (1 / M.Data[0][0]);
+		return one;
+	}
+
 	Eigen(M);
 	return Multiply(Adjoint(M), (1.0 / Determinant(M)));
 }

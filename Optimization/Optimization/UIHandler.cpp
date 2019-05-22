@@ -98,6 +98,7 @@ std::vector<std::string> UIHandler::DoMath()
 		break;
 	case Newton:
 		Answer.push_back("[Newton] : \t" + equations[equationIndex]);
+		Newton_method();
 		break;
 	case SteepDescent:
 		Answer.push_back("[SteepDescent] : \t" + equations[equationIndex]);
@@ -118,6 +119,7 @@ std::vector<std::string> UIHandler::DoMath()
 		break;
 	}
 
+	Answer.push_back("");
 	return Answer;
 }
 
@@ -132,7 +134,16 @@ double UIHandler::CalculateByCoef(double coef)
 	}
 	return m_Calculator.Caculate(vars);
 }
-double UIHandler::CalculateByCoordinate(std::vector<double> coor)
+double UIHandler::CalculateByCoordinate(std::vector<double>& coor, Term * term)
+{
+	std::map<char, double> vars;
+	for (int i = 0; i < varsCount; i++)
+	{
+		vars.insert(std::pair<char, double>(Variables[i], coor[i]));
+	}
+	return m_Calculator.Caculate(term, vars);
+}
+double UIHandler::CalculateByCoordinate(std::vector<double>& coor)
 {
 	std::map<char, double> vars;
 	for (int i = 0; i < varsCount; i++)
@@ -158,6 +169,8 @@ bool Bias_Left;
 //	here, tau means the threshold of delta( f(b1), f(b2) )
 double UIHandler::goldenSectionSearch(double a, double b, double c, double tau)
 {
+	std::cout << b << "\n";
+
 	//	find x (b2)
 	Bias_Left = (std::abs(c - b) > std::abs(b - a));	//	b is on left
 
@@ -171,6 +184,22 @@ double UIHandler::goldenSectionSearch(double a, double b, double c, double tau)
 	//	calculate (get y)
 	fof_x = CalculateByCoef(x);
 	fof_b = CalculateByCoef(b);
+
+	///	NAN case:
+	if (fof_x == NAN)
+	{
+		if (Bias_Left)
+			return goldenSectionSearch(a, b, x, tau);
+		else
+			return goldenSectionSearch(x, b, c, tau);
+	}
+	if (fof_b == NAN)
+	{
+		if (Bias_Left)
+			return goldenSectionSearch(b, x, c, tau);
+		else
+			return goldenSectionSearch(a, x, b, tau);
+	}
 
 	//	threshold - delta( f(b1), f(b2) )
 	if ((std::abs(fof_x - fof_b) < tau))
@@ -320,16 +349,19 @@ void UIHandler::Powell_method()
 
 			double Coefficient;
 			std::pair<double, double> Interval;
+
 			Interval = FindInterval(Directions[i], Position, intervals);
 			//	the calculation should know the: Direction, Position
 			Direction = Directions[i];
 			Coefficient = goldenSectionSearch(Interval.first, Interval.first + ((Interval.second - Interval.first)*resphi), Interval.second, DELTA_Y_THRESHOLD);
-			
+			//
+			std::cout << "EO goldenSectionSearch\n";
 			Position = v_Sum(Position, v_Multiply(Direction, Coefficient));
 		}
 		Answer.push_back("i = " + std::to_string(varsCount));
 		Answer.push_back("X: " + Vector2String(Position));
-
+		///
+		std::cout << "CCC\n";
 		Value = CalculateByCoordinate(Position);
 
 		//	quadra scheme~
@@ -344,11 +376,13 @@ void UIHandler::Powell_method()
 		double Coefficient;
 		std::pair<double, double> Interval;
 		Interval = FindInterval(Direction, Position, intervals);
+		///
+		std::cout << "GGG\n";
 		Coefficient = goldenSectionSearch(Interval.first, Interval.first + ((Interval.second - Interval.first)*resphi), Interval.second, DELTA_Y_THRESHOLD);
 		Position = v_Sum(Position, v_Multiply(Direction, Coefficient));
 
 		Answer.push_back("");
-		Answer.push_back("Alpha?: " + std::to_string(Coefficient));
+		Answer.push_back("Alpha: " + std::to_string(Coefficient));
 		Answer.push_back("S: " + Vector2String(Direction));
 		Answer.push_back("X: " + Vector2String(Position));
 		Answer.push_back("");
@@ -373,16 +407,18 @@ void UIHandler::Newton_method()
 {
 	Position = initPoint;
 
-	std::vector<Term> First_Order;
-	std::vector<std::vector<Term>> Second_Order;
+	std::vector<Term*> First_Order(varsCount);
+	std::vector<std::vector<Term*>> Second_Order(varsCount);
+	for (int i = 0; i < varsCount; i++)
+		Second_Order[i] = std::vector<Term*>(varsCount);
 	
-	//	get 1st and 2nd derivertives
+	//	get 1st and 2nd partial derivertives
 	for (int i = 0; i < varsCount; i++)
 	{
-		///First_Order[i] = 
+		First_Order[i] = m_Calculator.PartialDiff(m_Calculator.myCurrentFunc(), Variables[i]);
 		for (int j = i; j < varsCount; j++)
 		{
-			///Second_Order[i][j] = 
+			Second_Order[i][j] = m_Calculator.PartialDiff(First_Order[i], Variables[j]);
 		}
 	}
 
@@ -402,10 +438,10 @@ void UIHandler::Newton_method()
 		//	get Hessian vals
 		for (int i = 0; i < varsCount; i++)
 		{
-			///Gradient.Data[i][0] = ;
+			Gradient.Data[i][0] = CalculateByCoordinate(Position, First_Order[i]);
 			for (int j = i; j < varsCount; j++)
 			{
-				///Hessian.Data[i][j] = Hessian.Data[j][i] = ;
+				Hessian.Data[i][j] = Hessian.Data[j][i] = CalculateByCoordinate(Position, Second_Order[i][j]);
 			}
 		}
 		//	print Hessian
@@ -416,10 +452,16 @@ void UIHandler::Newton_method()
 		//	print Hessian inverse
 		Answer.push_back("Hessian Inverse: ");
 		CaCuMi::PrintMatrix(Hessian, Answer);
-
+		
 		//	calc delta X, update position
 		std::vector<double> deltaX = CaCuMi::Matrix2Vector(CaCuMi::Multiply(Hessian, Gradient));
-		Position = v_Subtract(Position, deltaX);
+
+		double Coefficient;
+		//	the calculation should know the: Direction, Position
+		Direction = deltaX;
+		Coefficient = goldenSectionSearch(-1.0, -resphi, 0.0, DELTA_Y_THRESHOLD);
+		deltaX = v_Multiply(deltaX, Coefficient);
+		Position = v_Sum(Position, deltaX);
 		//	print position
 		Answer.push_back("X: ");
 		Answer.push_back(Vector2String(Position));

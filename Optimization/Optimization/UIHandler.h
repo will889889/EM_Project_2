@@ -43,7 +43,8 @@ public:
 	void Newton_method();
 
 	double CalculateByCoef(double coef);
-	double CalculateByCoordinate(std::vector<double> coor);
+	double CalculateByCoordinate(std::vector<double>& coor);
+	double CalculateByCoordinate(std::vector<double>& coor, Term* term);
 
 	std::vector<std::string> TEST();
 	void FixEquation();
