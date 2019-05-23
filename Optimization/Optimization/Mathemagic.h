@@ -2,6 +2,7 @@
 #include <vector>
 #include <exception>
 #include <string>
+#include <iostream>
 
 std::string Vector2String(std::vector<double> v);
 std::vector<double> v_Multiply(std::vector<double> &v, double &coef);
@@ -18,8 +19,6 @@ public:
 	Matrix();
 	//	init the size of Rows and Columns
 	Matrix(int row, int col);
-
-	std::string Name = "";
 	std::vector< std::vector<double>> Data;
 };
 inline Matrix::Matrix()
@@ -40,6 +39,7 @@ public:
 	static const Matrix Vector2Matrix(const std::vector<double>& V);
 
 	static void PrintMatrix(const Matrix& M, std::vector<std::string>& Answer);
+	static void PrintMatrix(const Matrix& M);
 	static const Matrix Sum(const Matrix& M1, const Matrix& M2);
 	static const Matrix Sub(const Matrix& M1, const Matrix& M2);
 	static const Matrix Multiply(const Matrix& M1, const Matrix& M2);
