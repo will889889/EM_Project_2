@@ -102,7 +102,7 @@ std::vector<std::string> UIHandler::DoMath()
 		break;
 	case SteepDescent:
 		Answer.push_back("[SteepDescent] : \t" + equations[equationIndex]);
-
+		SteepestDescent();
 		break;
 	case QuasiNewton:
 		Answer.push_back("[QuasiNewton] : \t" + equations[equationIndex]);
@@ -294,7 +294,7 @@ void UIHandler::FixEquation()
 	Answer.push_back("(Click 'Clear' to reload)");
 }
 
-//	Powell��s "quadratically" convergent method
+//	Powell��s "quadratically" convergent method
 void UIHandler::Powell_method()
 {
 	std::vector<std::string> Info;
@@ -475,6 +475,143 @@ void UIHandler::Newton_method()
 	Answer.push_back(std::to_string(CalculateByCoordinate(Position)));
 }
 
+// Will's Func
+void UIHandler::SteepestDescent()
+{
+	// 第 i 個迭代
+	int index = 0;
+	std::map<char, double> inputX;
+	std::vector<double> outputX = initPoint;
+	std::vector<double> h;
+	double lambda;
+	
+	// 整理 X
+	for (int i = 0; i < Variables.size(); i++)
+	{
+		inputX[Variables[i]] = outputX[i];
+	}
+
+	// 整理Func 微分
+	Term* myFunc = m_Calculator.myCurrentFunc();
+	std::vector<Term*> DiffedFunc = m_Calculator.Gradient(myFunc, Variables);
+	std::vector<std::vector<Term*>> A(DiffedFunc.size());
+
+	// 產生 A (Func)
+	for (int i = 0; i < A.size(); i++)
+	{
+		A[i] = m_Calculator.Gradient(DiffedFunc[i], Variables);
+	}
+
+	// 檢查何時停止
+	bool stop = true;
+	h = m_Calculator.Caculate(DiffedFunc, inputX);
+	for (int i = 0; i < h.size(); i++)
+	{
+		h[i] = -h[i];
+		if (abs(h[i]) >= 0.0000001f)
+			stop = false;
+	}
+	while (!stop && index < 50)
+	{
+		// 顯示 i :
+		Answer.push_back("");
+		Answer.push_back("i = " + std::to_string(index));
+
+		// 1.取得 h
+		Answer.push_back("h = " + Vector2String(h));
+
+		// 2.取得 lambda
+
+		// 將 h 轉成 matrix
+		Matrix h_mat(h.size(), 1);
+		Matrix h_matT(1, h.size());
+		for (int k = 0; k < h.size(); k++)
+		{
+			h_mat.Data[k][0] = h[k]; 
+			h_matT.Data[0][k] = h[k];
+		}
+		Matrix temp = CaCuMi::Multiply(h_matT, h_mat);
+		// lambda = hT * h
+		lambda = temp.Data[0][0];
+		// 取得 A (值)
+		Matrix A_mat(A.size(), A[0].size());
+		for (int i = 0; i < A.size(); i++)
+		{
+			A_mat.Data[i] = m_Calculator.Caculate(A[i], inputX);
+		}
+		temp = CaCuMi::Multiply(h_matT, A_mat);
+		temp = CaCuMi::Multiply(temp, h_mat);
+		// lambda = hT * h / hT * A * h
+		lambda = lambda / temp.Data[0][0];
+
+		double Coefficient;
+		//	the calculation should know the: Direction, Position
+		Direction = v_Multiply(h, lambda);
+		Position = outputX;
+		Coefficient = goldenSectionSearch(0.0, resphi, 1.0, 0.0000001);
+		lambda *= Coefficient;
+		Answer.push_back("lambda = " + std::to_string(lambda));
+
+		// 3.取得 X
+		// outputX = outputX + lambda * h
+		bool bounded = false;
+		for (int i = 0; i < Variables.size(); i++)
+		{
+			outputX[i] = outputX[i] + lambda * h[i];
+			if (intervals[i].first > outputX[i])
+				outputX[i] = intervals[i].first;
+			else if(intervals[i].second < outputX[i])
+				outputX[i] = intervals[i].second;
+		}
+
+		// 整理 X
+		for (int i = 0; i < Variables.size(); i++)
+		{
+			inputX[Variables[i]] = outputX[i];
+		}
+		// InputX->outputX
+		Answer.push_back("X = " + Vector2String(outputX));
+
+		// 檢查是否停止
+		stop = true;
+		h = m_Calculator.Caculate(DiffedFunc, inputX);
+		for (int i = 0; i < h.size(); i++)
+		{
+			h[i] = -h[i];
+			if (abs(h[i]) >= 0.0000001f)
+				stop = false;
+		}
+		index++;
+	}
+
+	// 結束
+	// 輸出 X 和 min
+	// "[x, y]= "
+	Answer.push_back("");
+	Answer.push_back("ANSWER:");
+	std::string finalOutput = "";
+	for (int i = 0; i < Variables.size(); i++)
+	{
+
+		if (Variables.size() == 1)
+		{
+			Answer.push_back("[" + std::string(1, Variables[i]) + "]= ");
+		}
+		else
+		{
+			if (i != Variables.size() - 1 && i != 0)
+				finalOutput += std::string(1, Variables[i]) + ", ";
+			else if (i == 0)
+				finalOutput += "[" + std::string(1, Variables[i]) + ", ";
+			else
+				finalOutput += std::string(1, Variables[i]) + "]= ";
+		}
+	}
+	finalOutput += Vector2String(outputX);
+	Answer.push_back(finalOutput);
+	double min = m_Calculator.Caculate(inputX);
+	Answer.push_back("min = " + std::to_string(min));
+}
 void UIHandler::QuasiNewton_method()
 {
 	//	(DFP applied) (I used the true Hessian for init mimic instead of matrix_i)
