@@ -238,7 +238,7 @@ std::vector<std::string> UIHandler::TEST()
 	will_input['y'] = 2.0f;
 	will_input['z'] = 3.0f;
 	will_input['a'] = 4.0f;
-	double test_term = m_Calculator.PartialDerivative(m_Calculator.myCurrentFunc(), Variables[0], will_input);
+	Term* test_term = m_Calculator.PartialDiff(m_Calculator.myCurrentFunc(), 'x');
 	*/
 	// WILL end
 

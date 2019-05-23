@@ -266,6 +266,10 @@ Term* Caculator::PartialDiff(Term* inFunc, char toDiff)
 		bool isRemained = false;
 		// 若保留(代表是微分), 則需乘上此參數
 		double remained_coe = 1.0f;
+		// 若保留(代表是微分, 且是三角函數), 則需乘上此 變數們
+		bool isTriangle = false;
+		Variable* remained_var = NULL;
+		Variable* remained_Lastvar = NULL;
 		while (curReadVar != NULL)
 		{
 			// 讀取每一個變數(預設保留所有變數, 若到最後不是remained再刪掉)
@@ -289,15 +293,65 @@ Term* Caculator::PartialDiff(Term* inFunc, char toDiff)
 				n_var->exp = n_var->exp - 1.0f;
 				is_turnToConst = (n_var->exp == 0);
 			}
-			else
+			else if(curReadVar->type != FuncType::nonFunc)
 			{
-				if (curReadVar->type == FuncType::sinFunc)
-				{
+				// 檢查是否有 toDiff 在內(假設僅有 1 個Term)
+				bool is_VarIn = false;
 
+				Variable* rem_var = NULL;
+				Variable* rem_Lastvar = NULL;
+				if (curReadVar->FuncPara != NULL)
+				{
+					Variable* cv = curReadVar->FuncPara->vars;
+					while (cv != NULL)
+					{
+						if (cv->name == toDiff)
+						{
+							is_VarIn = true;
+						}
+						else
+						{
+							if (rem_var == NULL)
+								rem_var = rem_Lastvar = new Variable(*cv);
+							else
+							{
+								rem_Lastvar->next = new Variable(*cv);
+								rem_Lastvar = rem_Lastvar->next;
+							}
+							rem_Lastvar->next = NULL;
+						}
+						cv = cv->next;
+					}
 				}
-				else if (curReadVar->type == FuncType::cosFunc)
+				if (is_VarIn)
 				{
+					// 代表此Term會保留
+					isRemained = true;
+					isTriangle = true;
+					if (remained_var == NULL)
+					{
+						remained_var = rem_var;
+						remained_Lastvar = rem_Lastvar;
+					}
+					else
+					{
+						remained_Lastvar->next = rem_var;
+						remained_Lastvar = rem_Lastvar;
+					}
 
+					remained_coe *= curReadVar->FuncPara->coe;
+					if (curReadVar->type == FuncType::sinFunc)
+					{
+						n_var->type = FuncType::cosFunc;
+					}
+					else if (curReadVar->type == FuncType::cosFunc)
+					{
+						n_var->type = FuncType::sinFunc;
+					}
+				}
+				else
+				{
+					Destoryer(rem_var);
 				}
 			}
 			
@@ -307,8 +361,10 @@ Term* Caculator::PartialDiff(Term* inFunc, char toDiff)
 				if (diffVar == NULL)
 					diffVar = lastDiffVar = n_var;
 				else
+				{
 					lastDiffVar->next = n_var;
-				lastDiffVar = lastDiffVar->next;
+					lastDiffVar = lastDiffVar->next;
+				}
 			}
 
 			// 讀取下一個
@@ -323,11 +379,56 @@ Term* Caculator::PartialDiff(Term* inFunc, char toDiff)
 			curOut->coe = curRead->coe * remained_coe;
 			curOut->vars = diffVar;
 			curOut->next = NULL;
+			if (isTriangle && remained_var != NULL)
+			{
+				// new tail connect
+				Variable* headRemVar = remained_var;
+				Variable* curReadRemVar = remained_var;
+				Variable* lastReadRemVar = NULL;
+				while (curReadRemVar != NULL)
+				{
+					bool is_stack = false;
+					Variable* curReadDiffVar = diffVar;
+					Variable* toDie = NULL;
+					while (curReadDiffVar != NULL)
+					{
+						if (curReadRemVar->name == curReadDiffVar->name)
+						{
+							is_stack = true;
+							curReadDiffVar->exp += curReadRemVar->exp;
+							if (lastReadRemVar != NULL)
+								lastReadRemVar->next = curReadRemVar->next;
+							else
+								headRemVar = headRemVar->next;
+							toDie = curReadRemVar;
+							break;
+						}
+					}
+					
+					if (is_stack)
+					{
+						curReadRemVar = curReadRemVar->next;
+						delete toDie;
+					}
+					else
+					{
+						lastReadRemVar = curReadRemVar;
+						curReadRemVar = curReadRemVar->next;
+					}
+				}
+				if (headRemVar != NULL)
+				{
+					Variable* tailv = curOut->vars->next;
+					curOut->vars->next = headRemVar;
+					lastReadRemVar->next = tailv;
+				}
+			}
 		}
 		else
 		{
 			// 無包含, 毀掉全部:D(怕記憶體占用)
 			Destoryer(diffVar);
+			Destoryer(remained_var);
 		}
 
 		// 準備讀下一個Term
@@ -445,6 +546,7 @@ Term* Caculator::LoadTerm(string input)
 		curTerm->coe = coe * sign;
 
 		// 檢查是否為變數 ###可能是特殊函式形式?
+		Variable* totalvar = NULL;
 		Variable* lastvar = NULL;
 		while (input[i] == '*' || (!has_coe))
 		{
@@ -458,13 +560,12 @@ Term* Caculator::LoadTerm(string input)
 			curVar->type = FuncType::nonFunc;
 			curVar->FuncPara = NULL;
 
-			if (lastvar != NULL)
+			if (totalvar != NULL)
 				lastvar->next = curVar;
 			else
-				lastvar = curVar;
+				totalvar = lastvar = curVar;
 
-			// 連接Term
-			curTerm->vars = curVar;
+
 
 			// 不檢查是否為特殊fuction
 
@@ -493,6 +594,9 @@ Term* Caculator::LoadTerm(string input)
 			if (i >= inputLen)
 				break;
 		}
+
+		// 連接Term
+		curTerm->vars = totalvar;
 	}
 	return func;
 }
