@@ -512,6 +512,7 @@ void UIHandler::SteepestDescent()
 	while (!stop && index < 50)
 	{
 		// 顯示 i :
+		Answer.push_back("");
 		Answer.push_back("i = " + std::to_string(index));
 
 		// 1.取得 h
@@ -540,6 +541,13 @@ void UIHandler::SteepestDescent()
 		temp = CaCuMi::Multiply(temp, h_mat);
 		// lambda = hT * h / hT * A * h
 		lambda = lambda / temp.Data[0][0];
+
+		double Coefficient;
+		//	the calculation should know the: Direction, Position
+		Direction = v_Multiply(h, lambda);
+		Position = outputX;
+		Coefficient = goldenSectionSearch(0.0, resphi, 1.0, 0.0000001);
+		lambda *= Coefficient;
 		Answer.push_back("lambda = " + std::to_string(lambda));
 
 		// 3.取得 X
@@ -577,24 +585,28 @@ void UIHandler::SteepestDescent()
 	// 結束
 	// 輸出 X 和 min
 	// "[x, y]= "
+	Answer.push_back("");
+	Answer.push_back("ANSWER:");
+	std::string finalOutput = "";
 	for (int i = 0; i < Variables.size(); i++)
 	{
 
 		if (Variables.size() == 1)
 		{
-			Answer.push_back("[" + std::to_string(Variables[i]) + "]= ");
+			Answer.push_back("[" + std::string(1, Variables[i]) + "]= ");
 		}
 		else
 		{
 			if (i != Variables.size() - 1 && i != 0)
-				Answer.push_back(std::to_string(Variables[i]) + ", ");
+				finalOutput += std::string(1, Variables[i]) + ", ";
 			else if (i == 0)
-				Answer.push_back("[" + std::to_string(Variables[i]) + ", ");
+				finalOutput += "[" + std::string(1, Variables[i]) + ", ";
 			else
-				Answer.push_back(std::to_string(Variables[i]) + "]= ");
+				finalOutput += std::string(1, Variables[i]) + "]= ";
 		}
 	}
-	Answer.push_back(Vector2String(outputX));
+	finalOutput += Vector2String(outputX);
+	Answer.push_back(finalOutput);
 	double min = m_Calculator.Caculate(inputX);
 	Answer.push_back("min = " + std::to_string(min));
 }
