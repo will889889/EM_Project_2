@@ -61,11 +61,11 @@ double DeltaVector(std::vector<double> &v1, std::vector<double> &v2)
 	double sum = 0.0;
 	for (int i = 0; i < v1.size(); i++)
 	{
-		sum += (v1[i] * v2[i]);
+		sum += (v1[i] - v2[i])*(v1[i] - v2[i]);
 	}
-	return sum;
+	return sqrt(sum);
 }
-double Length(std::vector<double>& V)
+double Length(const std::vector<double>& V)
 {
 	double sum = 0.0;
 	for (int i = 0; i < V.size(); i++)
@@ -78,7 +78,7 @@ double Length(std::vector<double>& V)
 
 #pragma region Matrix
 
-std::vector<double> CaCuMi::Matrix2Vector(const Matrix & M)
+const std::vector<double> CaCuMi::Matrix2Vector(const Matrix & M)
 {
 	std::vector<double> result(M.Data.size());
 
@@ -88,6 +88,18 @@ std::vector<double> CaCuMi::Matrix2Vector(const Matrix & M)
 	}
 
 	return result;
+}
+
+const Matrix CaCuMi::Vector2Matrix(const std::vector<double>& V)
+{
+	Matrix tempMatrix(V.size(), 1);
+
+	for (int i = 0; i < V.size(); i++)
+	{
+		tempMatrix.Data[i][0] = V[i];
+	}
+
+	return Matrix();
 }
 
 void CaCuMi::PrintMatrix(const Matrix & M, std::vector<std::string>& Answer)
@@ -106,6 +118,42 @@ void CaCuMi::PrintMatrix(const Matrix & M, std::vector<std::string>& Answer)
 		Answer.push_back(result);
 	}
 	Answer.push_back("]");
+}
+
+const Matrix CaCuMi::Sum(const Matrix & M1, const Matrix & M2)
+{
+	if (M1.Data[0].size() != M2.Data[0].size() || M1.Data.size() != M2.Data.size())
+		throw std::exception("(Multiply) cannot match the size.");
+
+	int row = M1.Data.size(), col = M1.Data[0].size();
+	Matrix tempMatrix = Matrix(row, col);
+	for (int r = 0; r < row; r++)
+	{
+		for (int c = 0; c < col; c++)
+		{
+			tempMatrix.Data[r][c] = M1.Data[r][c] + M2.Data[r][c];
+		}
+	}
+
+	return tempMatrix;
+}
+
+const Matrix CaCuMi::Sub(const Matrix & M1, const Matrix & M2)
+{
+	if (M1.Data[0].size() != M2.Data[0].size() || M1.Data.size() != M2.Data.size())
+		throw std::exception("(Multiply) cannot match the size.");
+
+	int row = M1.Data.size(), col = M1.Data[0].size();
+	Matrix tempMatrix = Matrix(row, col);
+	for (int r = 0; r < row; r++)
+	{
+		for (int c = 0; c < col; c++)
+		{
+			tempMatrix.Data[r][c] = M1.Data[r][c] - M2.Data[r][c];
+		}
+	}
+
+	return tempMatrix;
 }
 
 const Matrix CaCuMi::Multiply(const Matrix & M1, const Matrix & M2)

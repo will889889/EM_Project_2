@@ -122,8 +122,6 @@ std::vector<std::string> UIHandler::DoMath()
 	Answer.push_back("");
 	return Answer;
 }
-
-#pragma region GoldenSection
 double UIHandler::CalculateByCoef(double coef)
 {
 	////////	this needs [Variables], [Position], [Direction] from global
@@ -152,14 +150,7 @@ double UIHandler::CalculateByCoordinate(std::vector<double>& coor)
 	}
 	return m_Calculator.Caculate(vars);
 }
-
-//	The function
-double f(double x)
-{
-	return (std::sin(3.0*x) + std::cos(x));
-	//return (x*(x - 1.0));
-	//return ((21.0 / 4.0) + (x - (1.0 / 4.0)) * (x - (1.0 / 4.0)));
-}
+#pragma region GoldenSection
 ///	boost
 double phi = (1 + std::sqrt(5)) / 2;	// 1.6xx
 double resphi = 2 - phi;	// 0.3xx
@@ -472,6 +463,130 @@ void UIHandler::Newton_method()
 		{
 			break;
 		}
+	}
+	//	minimizer
+	Answer.push_back("");
+	Answer.push_back("minimizer:");
+	Answer.push_back(Vector2String(Position));
+	//	value
+	Answer.push_back("value:");
+	Answer.push_back(std::to_string(CalculateByCoordinate(Position)));
+}
+
+
+void UIHandler::QuasiNewton_method()
+{
+	//	(DFP applied)
+
+	Position = initPoint;
+
+	std::vector<Term*> First_Order(varsCount);
+
+	//	get 1st order's partial derivertives
+	for (int i = 0; i < varsCount; i++)
+	{
+		First_Order[i] = m_Calculator.PartialDiff(m_Calculator.myCurrentFunc(), Variables[i]);
+	}
+
+	//	vars
+	Matrix Gradient(varsCount, 1);
+	Matrix LastGradient(varsCount, 1);
+	Matrix Mimic_Hessian(varsCount, varsCount);
+	Matrix Delta_Gradient(varsCount, 1);
+	//	init mimic (with matrix I)
+	for (int i = 0; i < varsCount; i++)
+	{
+		for (int j = 0; j < varsCount; j++)
+		{
+			if(i == j)
+				Mimic_Hessian.Data[i][j] = 1.0;
+			else
+				Mimic_Hessian.Data[i][j] = 0;
+		}
+	}
+	//	init Gradient vals
+	for (int i = 0; i < varsCount; i++)
+	{
+		Gradient.Data[i][0] = CalculateByCoordinate(Position, First_Order[i]);
+	}
+	//	print init mimic
+	Answer.push_back("init Hessian: ");
+	CaCuMi::PrintMatrix(Mimic_Hessian, Answer);
+
+	//	thresholds
+	std::vector<double> LastPosition;
+	double DELTA_X_THRESHOLD = 0.00000001;
+	double DELTA_Y_THRESHOLD = 0.000001;
+	int ITER_THRESHOLD = 1000;
+	//	the optimization loop
+	for (int iter = 1; iter < ITER_THRESHOLD; iter++)
+	{
+		LastPosition = Position;
+
+		//	threshold
+		if (Length(CaCuMi::Matrix2Vector(Gradient)) < DELTA_X_THRESHOLD)	//Length(deltaX) < DELTA_X_THRESHOLD || 
+		{
+			break;
+		}
+
+		//	calc delta X, update position
+		std::vector<double> deltaX = CaCuMi::Matrix2Vector(CaCuMi::Multiply(Mimic_Hessian, Gradient));
+
+		//	argmin f(x + ad)
+		double Coefficient;
+		//	the calculation should know the: Direction, Position
+		Direction = deltaX;
+		Coefficient = goldenSectionSearch(-1.0, -resphi, 0.0, DELTA_Y_THRESHOLD);
+		//	apply delta x to position
+		deltaX = v_Multiply(deltaX, Coefficient);
+		Position = v_Sum(Position, deltaX);
+
+		//	calc new gradient with new position
+		LastGradient = Gradient;
+		for (int i = 0; i < varsCount; i++)
+		{
+			Gradient.Data[i][0] = CalculateByCoordinate(Position, First_Order[i]);
+		}
+		//	calc delta_Gradient
+		Delta_Gradient = CaCuMi::Sub(Gradient, LastGradient);
+
+		//	calc new Mimic
+		Matrix Matrix_dX = CaCuMi::Vector2Matrix(deltaX);
+		/// n*n:	CaCuMi::Multiply(Matrix_dX, CaCuMi::Transpose(Matrix_dX));
+		///	1*1:	CaCuMi::Multiply(CaCuMi::Transpose(Matrix_dX), Delta_Gradient);
+		///	n*n:
+		//CaCuMi::Multiply(CaCuMi::Multiply(Matrix_dX, CaCuMi::Transpose(Matrix_dX)), CaCuMi::Multiply(CaCuMi::Transpose(Matrix_dX), Delta_Gradient).Data[0][0]);
+		/// n*1:	CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient);
+		///	n*n:	CaCuMi::Multiply(CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient), CaCuMi::Transpose(CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient)));
+		//CaCuMi::Multiply(CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient), CaCuMi::Transpose(CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient)));
+		//	1*1:	CaCuMi::Multiply(CaCuMi::Transpose(Matrix_dX), CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient));
+		Mimic_Hessian = CaCuMi::Sum(
+			Mimic_Hessian, 
+			CaCuMi::Sub(
+				CaCuMi::Multiply(
+					CaCuMi::Multiply(
+						Matrix_dX, 
+						CaCuMi::Transpose(Matrix_dX)
+					),
+					(1.0 / CaCuMi::Multiply(CaCuMi::Transpose(Matrix_dX), Delta_Gradient).Data[0][0])
+				),
+				CaCuMi::Multiply(
+					CaCuMi::Multiply(
+						CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient),
+						CaCuMi::Transpose(CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient))
+					),
+					(1.0 / CaCuMi::Multiply(CaCuMi::Transpose(Matrix_dX), CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient)).Data[0][0])
+				)
+			)
+		);
+
+		//	print Hessian
+		Answer.push_back("Quasi_Hessian: ");
+		CaCuMi::PrintMatrix(Mimic_Hessian, Answer);
+		//	print position
+		Answer.push_back("X: ");
+		Answer.push_back(Vector2String(Position));
+		Answer.push_back("");
 	}
 	//	minimizer
 	Answer.push_back("");
