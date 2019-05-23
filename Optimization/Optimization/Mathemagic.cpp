@@ -99,7 +99,7 @@ const Matrix CaCuMi::Vector2Matrix(const std::vector<double>& V)
 		tempMatrix.Data[i][0] = V[i];
 	}
 
-	return Matrix();
+	return tempMatrix;
 }
 
 void CaCuMi::PrintMatrix(const Matrix & M, std::vector<std::string>& Answer)
@@ -112,12 +112,30 @@ void CaCuMi::PrintMatrix(const Matrix & M, std::vector<std::string>& Answer)
 		{
 			result += std::to_string(M.Data[i][j]);
 
-			if (i != (M.Data[i].size() - 1))
+			if (j != (M.Data[i].size() - 1))
 				result += " ,\t";
 		}
 		Answer.push_back(result);
 	}
 	Answer.push_back("]");
+}
+
+void CaCuMi::PrintMatrix(const Matrix & M)
+{
+	std::cout << "[\n";
+	for (int i = 0; i < M.Data.size(); i++)
+	{
+		std::string result = "";
+		for (int j = 0; j < M.Data[i].size(); j++)
+		{
+			result += std::to_string(M.Data[i][j]);
+
+			if (j != (M.Data[i].size() - 1))
+				result += " ,\t";
+		}
+		std::cout << result << "\n";
+	}
+	std::cout << "]\n";
 }
 
 const Matrix CaCuMi::Sum(const Matrix & M1, const Matrix & M2)

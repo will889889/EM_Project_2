@@ -106,7 +106,7 @@ std::vector<std::string> UIHandler::DoMath()
 		break;
 	case QuasiNewton:
 		Answer.push_back("[QuasiNewton] : \t" + equations[equationIndex]);
-
+		QuasiNewton_method();
 		break;
 	case ConjugateGradient:
 		Answer.push_back("[ConjugateGradient] : \t" + equations[equationIndex]);
@@ -156,12 +156,11 @@ double phi = (1 + std::sqrt(5)) / 2;	// 1.6xx
 double resphi = 2 - phi;	// 0.3xx
 double fof_x, fof_b, x;
 bool Bias_Left;
+int GOLDEN_ITER_THRESHOLD = 1000;
 ///	boost
 //	here, tau means the threshold of delta( f(b1), f(b2) )
 double UIHandler::goldenSectionSearch(double a, double b, double c, double tau)
 {
-	std::cout << b << "\n";
-
 	//	find x (b2)
 	Bias_Left = (std::abs(c - b) > std::abs(b - a));	//	b is on left
 
@@ -170,11 +169,17 @@ double UIHandler::goldenSectionSearch(double a, double b, double c, double tau)
 	else
 		x = a + resphi * (c - a);
 
+	///std::cout << b << "\t" << x << "\n";
+
 	//Answer.push_back(" x: " + std::to_string(b) + " , b: " + std::to_string(x) + " , ca: " + std::to_string(std::abs(a - c)));
 
 	//	calculate (get y)
 	fof_x = CalculateByCoef(x);
 	fof_b = CalculateByCoef(b);
+
+	//	threshold - delta( f(b1), f(b2) )
+	if ((std::abs(fof_x - fof_b) < tau) || (std::abs(x - b) < tau))
+		return (x + b) / 2;
 
 	///	NAN case:
 	if (fof_x == NAN)
@@ -191,10 +196,7 @@ double UIHandler::goldenSectionSearch(double a, double b, double c, double tau)
 		else
 			return goldenSectionSearch(a, x, b, tau);
 	}
-
-	//	threshold - delta( f(b1), f(b2) )
-	if ((std::abs(fof_x - fof_b) < tau))
-		return (x + b) / 2;
+	
 	////	threshold - delta( b1, b2 )
 	//if (std::abs(a - c) < tau)
 	//	return (x + b) / 2;
@@ -612,17 +614,46 @@ void UIHandler::SteepestDescent()
 }
 void UIHandler::QuasiNewton_method()
 {
-	//	(DFP applied)
+	//	(DFP applied) (I used the true Hessian for init mimic instead of matrix_i)
 
 	Position = initPoint;
 
 	std::vector<Term*> First_Order(varsCount);
 
-	//	get 1st order's partial derivertives
+	///
+	std::vector<std::vector<Term*>> Second_Order(varsCount);
+	for (int i = 0; i < varsCount; i++)
+		Second_Order[i] = std::vector<Term*>(varsCount);
+	Matrix Hessian(varsCount, varsCount);
+	//	get 1st and 2nd partial derivertives
 	for (int i = 0; i < varsCount; i++)
 	{
 		First_Order[i] = m_Calculator.PartialDiff(m_Calculator.myCurrentFunc(), Variables[i]);
+		for (int j = i; j < varsCount; j++)
+		{
+			Second_Order[i][j] = m_Calculator.PartialDiff(First_Order[i], Variables[j]);
+			Hessian.Data[i][j] = Hessian.Data[j][i] = CalculateByCoordinate(Position, Second_Order[i][j]);
+		}
 	}
+
+	Answer.push_back("init Hessian: ");
+	CaCuMi::PrintMatrix(Hessian, Answer);
+	Hessian = CaCuMi::Inverse(Hessian);
+	Answer.push_back("init Hessian_inverse: ");
+	CaCuMi::PrintMatrix(Hessian, Answer);
+
+	////std::cout << "(Hessian):\n";
+	////CaCuMi::PrintMatrix(Hessian);
+	////Hessian = CaCuMi::Inverse(Hessian);
+	////std::cout << "(Hessian_inv):\n";
+	////CaCuMi::PrintMatrix(Hessian);
+	///
+
+	//////	get 1st order's partial derivertives
+	////for (int i = 0; i < varsCount; i++)
+	////{
+	////	First_Order[i] = m_Calculator.PartialDiff(m_Calculator.myCurrentFunc(), Variables[i]);
+	////}
 
 	//	vars
 	Matrix Gradient(varsCount, 1);
@@ -630,40 +661,66 @@ void UIHandler::QuasiNewton_method()
 	Matrix Mimic_Hessian(varsCount, varsCount);
 	Matrix Delta_Gradient(varsCount, 1);
 	//	init mimic (with matrix I)
-	for (int i = 0; i < varsCount; i++)
-	{
-		for (int j = 0; j < varsCount; j++)
-		{
-			if(i == j)
-				Mimic_Hessian.Data[i][j] = 1.0;
-			else
-				Mimic_Hessian.Data[i][j] = 0;
-		}
-	}
+	Mimic_Hessian = Hessian;
+	//////for (int i = 0; i < varsCount; i++)
+	//////{
+	//////	for (int j = 0; j < varsCount; j++)
+	//////	{
+	//////		if(i == j)
+	//////			Mimic_Hessian.Data[i][j] = 1.0;
+	//////		else
+	//////			Mimic_Hessian.Data[i][j] = 0;
+	//////	}
+	//////}
+
 	//	init Gradient vals
 	for (int i = 0; i < varsCount; i++)
 	{
 		Gradient.Data[i][0] = CalculateByCoordinate(Position, First_Order[i]);
 	}
 	//	print init mimic
-	Answer.push_back("init Hessian: ");
-	CaCuMi::PrintMatrix(Mimic_Hessian, Answer);
+	//////Answer.push_back("init Hessian: ");
+	//////CaCuMi::PrintMatrix(Mimic_Hessian, Answer);
 
 	//	thresholds
 	std::vector<double> LastPosition;
-	double DELTA_X_THRESHOLD = 0.00000001;
-	double DELTA_Y_THRESHOLD = 0.000001;
-	int ITER_THRESHOLD = 1000;
+	double DELTA_X_THRESHOLD = 0.01;
+	double DELTA_Y_THRESHOLD = 0.01;
+	int ITER_THRESHOLD = 100;
 	//	the optimization loop
-	for (int iter = 1; iter < ITER_THRESHOLD; iter++)
+	for (int iter = 1; ; iter++)
 	{
 		LastPosition = Position;
+		
+		//	output
+		//	print Hessian
+		Answer.push_back("Quasi_Hessian: ");
+		CaCuMi::PrintMatrix(Mimic_Hessian, Answer);
+		//	print position
+		Answer.push_back("X: ");
+		Answer.push_back(Vector2String(Position));
+		Answer.push_back("");
 
 		//	threshold
+		double length = Length(CaCuMi::Matrix2Vector(Gradient));
+		////std::cout << "\ni: " << iter << "\tm: " << length;
 		if (Length(CaCuMi::Matrix2Vector(Gradient)) < DELTA_X_THRESHOLD)	//Length(deltaX) < DELTA_X_THRESHOLD || 
 		{
 			break;
 		}
+		if (iter < ITER_THRESHOLD)
+		{
+			Answer.push_back("");
+			Answer.push_back("I GIVE UP!");
+			Answer.push_back("");
+		}
+
+		///
+		////std::cout << "\nMimic_Hessian:\n";
+		////CaCuMi::PrintMatrix(Mimic_Hessian);
+		////std::cout << "Gradient:\n";
+		////CaCuMi::PrintMatrix(Gradient);
+		///
 
 		//	calc delta X, update position
 		std::vector<double> deltaX = CaCuMi::Matrix2Vector(CaCuMi::Multiply(Mimic_Hessian, Gradient));
@@ -674,8 +731,15 @@ void UIHandler::QuasiNewton_method()
 		Direction = deltaX;
 		Coefficient = goldenSectionSearch(-1.0, -resphi, 0.0, DELTA_Y_THRESHOLD);
 		//	apply delta x to position
+		///
+		std::cout << "coef: " << Coefficient << "\n";
 		deltaX = v_Multiply(deltaX, Coefficient);
+		///
 		Position = v_Sum(Position, deltaX);
+
+		///
+		////std::cout << "Position:\t" << Vector2String(Position) << "\n";
+		///
 
 		//	calc new gradient with new position
 		LastGradient = Gradient;
@@ -695,7 +759,10 @@ void UIHandler::QuasiNewton_method()
 		/// n*1:	CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient);
 		///	n*n:	CaCuMi::Multiply(CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient), CaCuMi::Transpose(CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient)));
 		//CaCuMi::Multiply(CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient), CaCuMi::Transpose(CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient)));
-		//	1*1:	CaCuMi::Multiply(CaCuMi::Transpose(Matrix_dX), CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient));
+		//	1*1:	
+		//CaCuMi::Multiply(CaCuMi::Transpose(Matrix_dX), CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient));
+
+
 		Mimic_Hessian = CaCuMi::Sum(
 			Mimic_Hessian, 
 			CaCuMi::Sub(
@@ -715,14 +782,6 @@ void UIHandler::QuasiNewton_method()
 				)
 			)
 		);
-
-		//	print Hessian
-		Answer.push_back("Quasi_Hessian: ");
-		CaCuMi::PrintMatrix(Mimic_Hessian, Answer);
-		//	print position
-		Answer.push_back("X: ");
-		Answer.push_back(Vector2String(Position));
-		Answer.push_back("");
 	}
 	//	minimizer
 	Answer.push_back("");
