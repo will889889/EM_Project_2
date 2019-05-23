@@ -101,7 +101,7 @@ std::vector<std::string> UIHandler::DoMath()
 		break;
 	case SteepDescent:
 		Answer.push_back("[SteepDescent] : \t" + equations[equationIndex]);
-
+		SteepestDescent();
 		break;
 	case QuasiNewton:
 		Answer.push_back("[QuasiNewton] : \t" + equations[equationIndex]);
@@ -440,7 +440,131 @@ void UIHandler::Newton_method()
 	Answer.push_back(std::to_string(CalculateByCoordinate(Position)));
 }
 
+// Will's Func
+void UIHandler::SteepestDescent()
+{
+	// 迭代次數
+	int index = 0;
+	std::map<char, double> inputX;
+	std::vector<double> outputX = initPoint;
+	std::vector<double> h;
+	double lambda;
+	
+	// 整理 X
+	for (int i = 0; i < Variables.size(); i++)
+	{
+		inputX[Variables[i]] = outputX[i];
+	}
 
+	// 取得Func
+	Term* myFunc = m_Calculator.myCurrentFunc();
+	std::vector<Term*> DiffedFunc = m_Calculator.Gradient(myFunc, Variables);
+	std::vector<std::vector<Term*>> A(DiffedFunc.size());
+
+	// 找到 A (Func)
+	for (int i = 0; i < A.size(); i++)
+	{
+		A[i] = m_Calculator.Gradient(DiffedFunc[i], Variables);
+	}
+
+	// 在此處尋找是否要停止
+	bool stop = true;
+	h = m_Calculator.Caculate(DiffedFunc, inputX);
+	for (int i = 0; i < h.size(); i++)
+	{
+		h[i] = -h[i];
+		if (abs(h[i]) >= 0.0000001f)
+			stop = false;
+	}
+	while (!stop && index < 50)
+	{
+		// 第 i 次:
+		Answer.push_back("i = " + std::to_string(index));
+
+		// 1.找到 h
+		Answer.push_back("h = " + Vector2String(h));
+
+		// 2.找到 lambda
+
+		// 將 h 轉成matrix形式
+		Matrix h_mat(h.size(), 1);
+		Matrix h_matT(1, h.size());
+		for (int k = 0; k < h.size(); k++)
+		{
+			h_mat.Data[k][0] = h[k]; 
+			h_matT.Data[0][k] = h[k];
+		}
+		Matrix temp = CaCuMi::Multiply(h_matT, h_mat);
+		// λ = hT * h
+		lambda = temp.Data[0][0];
+		// 找出A(代入求值)
+		Matrix A_mat(A.size(), A[0].size());
+		for (int i = 0; i < A.size(); i++)
+		{
+			A_mat.Data[i] = m_Calculator.Caculate(A[i], inputX);
+		}
+		temp = CaCuMi::Multiply(h_matT, A_mat);
+		temp = CaCuMi::Multiply(temp, h_mat);
+		// λ = hT * h / hT * A * h
+		lambda = lambda / temp.Data[0][0];
+		Answer.push_back("lambda = " + std::to_string(lambda));
+
+		// 3.找到 下個 X
+		// outputX = outputX + lambda * h
+		bool bounded = false;
+		for (int i = 0; i < Variables.size(); i++)
+		{
+			outputX[i] = outputX[i] + lambda * h[i];
+			if (intervals[i].first > outputX[i])
+				outputX[i] = intervals[i].first;
+			else if(intervals[i].second < outputX[i])
+				outputX[i] = intervals[i].second;
+		}
+
+		// 整理 X
+		for (int i = 0; i < Variables.size(); i++)
+		{
+			inputX[Variables[i]] = outputX[i];
+		}
+		// 轉換InputX->outputX
+		Answer.push_back("X = " + Vector2String(outputX));
+
+		// 重算下次的是否要終止
+		stop = true;
+		h = m_Calculator.Caculate(DiffedFunc, inputX);
+		for (int i = 0; i < h.size(); i++)
+		{
+			h[i] = -h[i];
+			if (abs(h[i]) >= 0.0000001f)
+				stop = false;
+		}
+		index++;
+	}
+
+	// 結束
+	// 輸出 最終X 以及 最小值
+	// "[x, y]= "
+	for (int i = 0; i < Variables.size(); i++)
+	{
+
+		if (Variables.size() == 1)
+		{
+			Answer.push_back("[" + std::to_string(Variables[i]) + "]= ");
+		}
+		else
+		{
+			if (i != Variables.size() - 1 && i != 0)
+				Answer.push_back(std::to_string(Variables[i]) + ", ");
+			else if (i == 0)
+				Answer.push_back("[" + std::to_string(Variables[i]) + ", ");
+			else
+				Answer.push_back(std::to_string(Variables[i]) + "]= ");
+		}
+	}
+	Answer.push_back(Vector2String(outputX));
+	double min = m_Calculator.Caculate(inputX);
+	Answer.push_back("min = " + std::to_string(min));
+}
 
 #pragma region TrashCan
 //double goldenSectionSearch(double a, double b, double c, double tau)

@@ -233,6 +233,17 @@ double Caculator::Caculate(Term* caculatee, std::map<char, double> input)
 	return output;
 }
 
+// 將輸入的 input 代入 caculatees 求值. 此方法不會修改myCurrentFunc
+vector<double> Caculator::Caculate(std::vector<Term*> caculatees, std::map<char, double> input)
+{
+	vector<double> output;
+	for (int i = 0; i < caculatees.size(); i++)
+	{
+		output.push_back(Caculate(caculatees[i], input));
+	}
+	return output;
+}
+
 Term* Caculator::PartialDiff(Term* inFunc, char toDiff)
 {
 	Term* output = new Term;
@@ -333,6 +344,47 @@ double Caculator::PartialDerivative(Term* inFunc, char toDiff, std::map<char, do
 	Term* diffed = PartialDiff(inFunc, toDiff);
 	double output = Caculate(diffed, input);
 	Destoryer(diffed);
+	return output;
+}
+
+double Caculator::PartialDerivative(char toDiff, std::map<char, double> input)
+{
+	Term* diffed = PartialDiff(currentFunc, toDiff);
+	double output = Caculate(diffed, input);
+	Destoryer(diffed);
+	return output;
+}
+
+// 將輸入的inFunc微分, 求得梯度(為一個vector, 順序以 order 排序)
+std::vector<Term*> Caculator::Gradient(Term* inFunc, std::vector<char> order)
+{
+	vector<Term*> output;
+	for (int i = 0; i < order.size(); i++)
+	{
+		output.push_back(PartialDiff(inFunc, order[i]));
+	}
+	return output;
+}
+
+// 將輸入的 inFunc 微分, 並代入 input, 求得梯度值(為一個vector, 順序以 order 排序)
+std::vector<double> Caculator::Gradient(Term* inFunc, std::vector<char> order, std::map<char, double> input)
+{
+	vector<double> output;
+	for (int i = 0; i < order.size(); i++)
+	{
+		output.push_back(PartialDerivative(inFunc, order[i], input));
+	}
+	return output;
+}
+
+// 將 myCurrentFunc 微分, 並代入變數求值.(為一個vector, 順序以 order 排序)
+std::vector<double> Caculator::Gradient(std::vector<char> order, std::map<char, double> input)
+{
+	vector<double> output;
+	for (int i = 0; i < order.size(); i++)
+	{
+		output.push_back(PartialDerivative(order[i], input));
+	}
 	return output;
 }
 
