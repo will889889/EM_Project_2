@@ -476,31 +476,31 @@ void UIHandler::Newton_method()
 // Will's Func
 void UIHandler::SteepestDescent()
 {
-	// ���N����
+	// 第 i 個迭代
 	int index = 0;
 	std::map<char, double> inputX;
 	std::vector<double> outputX = initPoint;
 	std::vector<double> h;
 	double lambda;
 	
-	// ��z X
+	// 整理 X
 	for (int i = 0; i < Variables.size(); i++)
 	{
 		inputX[Variables[i]] = outputX[i];
 	}
 
-	// ���oFunc
+	// 整理Func 微分
 	Term* myFunc = m_Calculator.myCurrentFunc();
 	std::vector<Term*> DiffedFunc = m_Calculator.Gradient(myFunc, Variables);
 	std::vector<std::vector<Term*>> A(DiffedFunc.size());
 
-	// ��� A (Func)
+	// 產生 A (Func)
 	for (int i = 0; i < A.size(); i++)
 	{
 		A[i] = m_Calculator.Gradient(DiffedFunc[i], Variables);
 	}
 
-	// �b���B�M��O�_�n����
+	// 檢查何時停止
 	bool stop = true;
 	h = m_Calculator.Caculate(DiffedFunc, inputX);
 	for (int i = 0; i < h.size(); i++)
@@ -511,15 +511,15 @@ void UIHandler::SteepestDescent()
 	}
 	while (!stop && index < 50)
 	{
-		// �� i ��:
+		// 顯示 i :
 		Answer.push_back("i = " + std::to_string(index));
 
-		// 1.��� h
+		// 1.取得 h
 		Answer.push_back("h = " + Vector2String(h));
 
-		// 2.��� lambda
+		// 2.取得 lambda
 
-		// �N h �নmatrix�Φ�
+		// 將 h 轉成 matrix
 		Matrix h_mat(h.size(), 1);
 		Matrix h_matT(1, h.size());
 		for (int k = 0; k < h.size(); k++)
@@ -528,9 +528,9 @@ void UIHandler::SteepestDescent()
 			h_matT.Data[0][k] = h[k];
 		}
 		Matrix temp = CaCuMi::Multiply(h_matT, h_mat);
-		// �f = hT * h
+		// lambda = hT * h
 		lambda = temp.Data[0][0];
-		// ��XA(�N�J�D��)
+		// 取得 A (值)
 		Matrix A_mat(A.size(), A[0].size());
 		for (int i = 0; i < A.size(); i++)
 		{
@@ -538,11 +538,11 @@ void UIHandler::SteepestDescent()
 		}
 		temp = CaCuMi::Multiply(h_matT, A_mat);
 		temp = CaCuMi::Multiply(temp, h_mat);
-		// �f = hT * h / hT * A * h
+		// lambda = hT * h / hT * A * h
 		lambda = lambda / temp.Data[0][0];
 		Answer.push_back("lambda = " + std::to_string(lambda));
 
-		// 3.��� �U�� X
+		// 3.取得 X
 		// outputX = outputX + lambda * h
 		bool bounded = false;
 		for (int i = 0; i < Variables.size(); i++)
@@ -554,15 +554,15 @@ void UIHandler::SteepestDescent()
 				outputX[i] = intervals[i].second;
 		}
 
-		// ��z X
+		// 整理 X
 		for (int i = 0; i < Variables.size(); i++)
 		{
 			inputX[Variables[i]] = outputX[i];
 		}
-		// �ഫInputX->outputX
+		// InputX->outputX
 		Answer.push_back("X = " + Vector2String(outputX));
 
-		// ����U�����O�_�n�פ�
+		// 檢查是否停止
 		stop = true;
 		h = m_Calculator.Caculate(DiffedFunc, inputX);
 		for (int i = 0; i < h.size(); i++)
@@ -574,8 +574,8 @@ void UIHandler::SteepestDescent()
 		index++;
 	}
 
-	// ����
-	// ��X �̲�X �H�� �̤p��
+	// 結束
+	// 輸出 X 和 min
 	// "[x, y]= "
 	for (int i = 0; i < Variables.size(); i++)
 	{
