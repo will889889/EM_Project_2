@@ -8,7 +8,7 @@ std::vector<double> v_Multiply(std::vector<double> &v, double &coef);
 std::vector<double> v_Sum(std::vector<double> &v1, std::vector<double> &v2);
 std::vector<double> v_Subtract(std::vector<double> &v1, std::vector<double> &v2);
 double DeltaVector(std::vector<double> &v1, std::vector<double> &v2);
-double Length(std::vector<double> &V);
+double Length(const std::vector<double> &V);
 
 #pragma region Matrix
 //定義資料結構
@@ -36,9 +36,12 @@ inline Matrix::Matrix(int row, int col)
 static class CaCuMi
 {
 public:
-	static std::vector<double> Matrix2Vector(const Matrix& M);
-	static void PrintMatrix(const Matrix& M, std::vector<std::string>& Answer);
+	static const std::vector<double> Matrix2Vector(const Matrix& M);
+	static const Matrix Vector2Matrix(const std::vector<double>& V);
 
+	static void PrintMatrix(const Matrix& M, std::vector<std::string>& Answer);
+	static const Matrix Sum(const Matrix& M1, const Matrix& M2);
+	static const Matrix Sub(const Matrix& M1, const Matrix& M2);
 	static const Matrix Multiply(const Matrix& M1, const Matrix& M2);
 	static const Matrix Multiply(const Matrix& M, const double& scale);
 	//	行列式

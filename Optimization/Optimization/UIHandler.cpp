@@ -98,6 +98,7 @@ std::vector<std::string> UIHandler::DoMath()
 		break;
 	case Newton:
 		Answer.push_back("[Newton] : \t" + equations[equationIndex]);
+		Newton_method();
 		break;
 	case SteepDescent:
 		Answer.push_back("[SteepDescent] : \t" + equations[equationIndex]);
@@ -118,10 +119,9 @@ std::vector<std::string> UIHandler::DoMath()
 		break;
 	}
 
+	Answer.push_back("");
 	return Answer;
 }
-
-#pragma region GoldenSection
 double UIHandler::CalculateByCoef(double coef)
 {
 	////////	this needs [Variables], [Position], [Direction] from global
@@ -132,7 +132,16 @@ double UIHandler::CalculateByCoef(double coef)
 	}
 	return m_Calculator.Caculate(vars);
 }
-double UIHandler::CalculateByCoordinate(std::vector<double> coor)
+double UIHandler::CalculateByCoordinate(std::vector<double>& coor, Term * term)
+{
+	std::map<char, double> vars;
+	for (int i = 0; i < varsCount; i++)
+	{
+		vars.insert(std::pair<char, double>(Variables[i], coor[i]));
+	}
+	return m_Calculator.Caculate(term, vars);
+}
+double UIHandler::CalculateByCoordinate(std::vector<double>& coor)
 {
 	std::map<char, double> vars;
 	for (int i = 0; i < varsCount; i++)
@@ -141,14 +150,7 @@ double UIHandler::CalculateByCoordinate(std::vector<double> coor)
 	}
 	return m_Calculator.Caculate(vars);
 }
-
-//	The function
-double f(double x)
-{
-	return (std::sin(3.0*x) + std::cos(x));
-	//return (x*(x - 1.0));
-	//return ((21.0 / 4.0) + (x - (1.0 / 4.0)) * (x - (1.0 / 4.0)));
-}
+#pragma region GoldenSection
 ///	boost
 double phi = (1 + std::sqrt(5)) / 2;	// 1.6xx
 double resphi = 2 - phi;	// 0.3xx
@@ -158,6 +160,8 @@ bool Bias_Left;
 //	here, tau means the threshold of delta( f(b1), f(b2) )
 double UIHandler::goldenSectionSearch(double a, double b, double c, double tau)
 {
+	std::cout << b << "\n";
+
 	//	find x (b2)
 	Bias_Left = (std::abs(c - b) > std::abs(b - a));	//	b is on left
 
@@ -171,6 +175,22 @@ double UIHandler::goldenSectionSearch(double a, double b, double c, double tau)
 	//	calculate (get y)
 	fof_x = CalculateByCoef(x);
 	fof_b = CalculateByCoef(b);
+
+	///	NAN case:
+	if (fof_x == NAN)
+	{
+		if (Bias_Left)
+			return goldenSectionSearch(a, b, x, tau);
+		else
+			return goldenSectionSearch(x, b, c, tau);
+	}
+	if (fof_b == NAN)
+	{
+		if (Bias_Left)
+			return goldenSectionSearch(b, x, c, tau);
+		else
+			return goldenSectionSearch(a, x, b, tau);
+	}
 
 	//	threshold - delta( f(b1), f(b2) )
 	if ((std::abs(fof_x - fof_b) < tau))
@@ -272,7 +292,7 @@ void UIHandler::FixEquation()
 	Answer.push_back("(Click 'Clear' to reload)");
 }
 
-//	Powell¡¦s "quadratically" convergent method
+//	Powellï¿½ï¿½s "quadratically" convergent method
 void UIHandler::Powell_method()
 {
 	std::vector<std::string> Info;
@@ -320,16 +340,19 @@ void UIHandler::Powell_method()
 
 			double Coefficient;
 			std::pair<double, double> Interval;
+
 			Interval = FindInterval(Directions[i], Position, intervals);
 			//	the calculation should know the: Direction, Position
 			Direction = Directions[i];
 			Coefficient = goldenSectionSearch(Interval.first, Interval.first + ((Interval.second - Interval.first)*resphi), Interval.second, DELTA_Y_THRESHOLD);
-			
+			//
+			std::cout << "EO goldenSectionSearch\n";
 			Position = v_Sum(Position, v_Multiply(Direction, Coefficient));
 		}
 		Answer.push_back("i = " + std::to_string(varsCount));
 		Answer.push_back("X: " + Vector2String(Position));
-
+		///
+		std::cout << "CCC\n";
 		Value = CalculateByCoordinate(Position);
 
 		//	quadra scheme~
@@ -344,11 +367,13 @@ void UIHandler::Powell_method()
 		double Coefficient;
 		std::pair<double, double> Interval;
 		Interval = FindInterval(Direction, Position, intervals);
+		///
+		std::cout << "GGG\n";
 		Coefficient = goldenSectionSearch(Interval.first, Interval.first + ((Interval.second - Interval.first)*resphi), Interval.second, DELTA_Y_THRESHOLD);
 		Position = v_Sum(Position, v_Multiply(Direction, Coefficient));
 
 		Answer.push_back("");
-		Answer.push_back("Alpha?: " + std::to_string(Coefficient));
+		Answer.push_back("Alpha: " + std::to_string(Coefficient));
 		Answer.push_back("S: " + Vector2String(Direction));
 		Answer.push_back("X: " + Vector2String(Position));
 		Answer.push_back("");
@@ -373,16 +398,18 @@ void UIHandler::Newton_method()
 {
 	Position = initPoint;
 
-	std::vector<Term> First_Order;
-	std::vector<std::vector<Term>> Second_Order;
+	std::vector<Term*> First_Order(varsCount);
+	std::vector<std::vector<Term*>> Second_Order(varsCount);
+	for (int i = 0; i < varsCount; i++)
+		Second_Order[i] = std::vector<Term*>(varsCount);
 	
-	//	get 1st and 2nd derivertives
+	//	get 1st and 2nd partial derivertives
 	for (int i = 0; i < varsCount; i++)
 	{
-		///First_Order[i] = 
+		First_Order[i] = m_Calculator.PartialDiff(m_Calculator.myCurrentFunc(), Variables[i]);
 		for (int j = i; j < varsCount; j++)
 		{
-			///Second_Order[i][j] = 
+			Second_Order[i][j] = m_Calculator.PartialDiff(First_Order[i], Variables[j]);
 		}
 	}
 
@@ -402,10 +429,10 @@ void UIHandler::Newton_method()
 		//	get Hessian vals
 		for (int i = 0; i < varsCount; i++)
 		{
-			///Gradient.Data[i][0] = ;
+			Gradient.Data[i][0] = CalculateByCoordinate(Position, First_Order[i]);
 			for (int j = i; j < varsCount; j++)
 			{
-				///Hessian.Data[i][j] = Hessian.Data[j][i] = ;
+				Hessian.Data[i][j] = Hessian.Data[j][i] = CalculateByCoordinate(Position, Second_Order[i][j]);
 			}
 		}
 		//	print Hessian
@@ -416,10 +443,16 @@ void UIHandler::Newton_method()
 		//	print Hessian inverse
 		Answer.push_back("Hessian Inverse: ");
 		CaCuMi::PrintMatrix(Hessian, Answer);
-
+		
 		//	calc delta X, update position
 		std::vector<double> deltaX = CaCuMi::Matrix2Vector(CaCuMi::Multiply(Hessian, Gradient));
-		Position = v_Subtract(Position, deltaX);
+
+		double Coefficient;
+		//	the calculation should know the: Direction, Position
+		Direction = deltaX;
+		Coefficient = goldenSectionSearch(-1.0, -resphi, 0.0, DELTA_Y_THRESHOLD);
+		deltaX = v_Multiply(deltaX, Coefficient);
+		Position = v_Sum(Position, deltaX);
 		//	print position
 		Answer.push_back("X: ");
 		Answer.push_back(Vector2String(Position));
@@ -443,31 +476,31 @@ void UIHandler::Newton_method()
 // Will's Func
 void UIHandler::SteepestDescent()
 {
-	// ­¡¥N¦¸¼Æ
+	// ï¿½ï¿½ï¿½Nï¿½ï¿½ï¿½ï¿½
 	int index = 0;
 	std::map<char, double> inputX;
 	std::vector<double> outputX = initPoint;
 	std::vector<double> h;
 	double lambda;
 	
-	// ¾ã²z X
+	// ï¿½ï¿½z X
 	for (int i = 0; i < Variables.size(); i++)
 	{
 		inputX[Variables[i]] = outputX[i];
 	}
 
-	// ¨ú±oFunc
+	// ï¿½ï¿½ï¿½oFunc
 	Term* myFunc = m_Calculator.myCurrentFunc();
 	std::vector<Term*> DiffedFunc = m_Calculator.Gradient(myFunc, Variables);
 	std::vector<std::vector<Term*>> A(DiffedFunc.size());
 
-	// §ä¨ì A (Func)
+	// ï¿½ï¿½ï¿½ A (Func)
 	for (int i = 0; i < A.size(); i++)
 	{
 		A[i] = m_Calculator.Gradient(DiffedFunc[i], Variables);
 	}
 
-	// ¦b¦¹³B´M§ä¬O§_­n°±¤î
+	// ï¿½bï¿½ï¿½ï¿½Bï¿½Mï¿½ï¿½Oï¿½_ï¿½nï¿½ï¿½ï¿½ï¿½
 	bool stop = true;
 	h = m_Calculator.Caculate(DiffedFunc, inputX);
 	for (int i = 0; i < h.size(); i++)
@@ -478,15 +511,15 @@ void UIHandler::SteepestDescent()
 	}
 	while (!stop && index < 50)
 	{
-		// ²Ä i ¦¸:
+		// ï¿½ï¿½ i ï¿½ï¿½:
 		Answer.push_back("i = " + std::to_string(index));
 
-		// 1.§ä¨ì h
+		// 1.ï¿½ï¿½ï¿½ h
 		Answer.push_back("h = " + Vector2String(h));
 
-		// 2.§ä¨ì lambda
+		// 2.ï¿½ï¿½ï¿½ lambda
 
-		// ±N h Âà¦¨matrix§Î¦¡
+		// ï¿½N h ï¿½à¦¨matrixï¿½Î¦ï¿½
 		Matrix h_mat(h.size(), 1);
 		Matrix h_matT(1, h.size());
 		for (int k = 0; k < h.size(); k++)
@@ -495,9 +528,9 @@ void UIHandler::SteepestDescent()
 			h_matT.Data[0][k] = h[k];
 		}
 		Matrix temp = CaCuMi::Multiply(h_matT, h_mat);
-		// £f = hT * h
+		// ï¿½f = hT * h
 		lambda = temp.Data[0][0];
-		// §ä¥XA(¥N¤J¨D­È)
+		// ï¿½ï¿½XA(ï¿½Nï¿½Jï¿½Dï¿½ï¿½)
 		Matrix A_mat(A.size(), A[0].size());
 		for (int i = 0; i < A.size(); i++)
 		{
@@ -505,11 +538,11 @@ void UIHandler::SteepestDescent()
 		}
 		temp = CaCuMi::Multiply(h_matT, A_mat);
 		temp = CaCuMi::Multiply(temp, h_mat);
-		// £f = hT * h / hT * A * h
+		// ï¿½f = hT * h / hT * A * h
 		lambda = lambda / temp.Data[0][0];
 		Answer.push_back("lambda = " + std::to_string(lambda));
 
-		// 3.§ä¨ì ¤U­Ó X
+		// 3.ï¿½ï¿½ï¿½ ï¿½Uï¿½ï¿½ X
 		// outputX = outputX + lambda * h
 		bool bounded = false;
 		for (int i = 0; i < Variables.size(); i++)
@@ -521,15 +554,15 @@ void UIHandler::SteepestDescent()
 				outputX[i] = intervals[i].second;
 		}
 
-		// ¾ã²z X
+		// ï¿½ï¿½z X
 		for (int i = 0; i < Variables.size(); i++)
 		{
 			inputX[Variables[i]] = outputX[i];
 		}
-		// Âà´«InputX->outputX
+		// ï¿½à´«InputX->outputX
 		Answer.push_back("X = " + Vector2String(outputX));
 
-		// ­«ºâ¤U¦¸ªº¬O§_­n²×¤î
+		// ï¿½ï¿½ï¿½ï¿½Uï¿½ï¿½ï¿½ï¿½ï¿½Oï¿½_ï¿½nï¿½×¤ï¿½
 		stop = true;
 		h = m_Calculator.Caculate(DiffedFunc, inputX);
 		for (int i = 0; i < h.size(); i++)
@@ -541,8 +574,8 @@ void UIHandler::SteepestDescent()
 		index++;
 	}
 
-	// µ²§ô
-	// ¿é¥X ³Ì²×X ¥H¤Î ³Ì¤p­È
+	// ï¿½ï¿½ï¿½ï¿½
+	// ï¿½ï¿½X ï¿½Ì²ï¿½X ï¿½Hï¿½ï¿½ ï¿½Ì¤pï¿½ï¿½
 	// "[x, y]= "
 	for (int i = 0; i < Variables.size(); i++)
 	{
@@ -565,6 +598,130 @@ void UIHandler::SteepestDescent()
 	double min = m_Calculator.Caculate(inputX);
 	Answer.push_back("min = " + std::to_string(min));
 }
+void UIHandler::QuasiNewton_method()
+{
+	//	(DFP applied)
+
+	Position = initPoint;
+
+	std::vector<Term*> First_Order(varsCount);
+
+	//	get 1st order's partial derivertives
+	for (int i = 0; i < varsCount; i++)
+	{
+		First_Order[i] = m_Calculator.PartialDiff(m_Calculator.myCurrentFunc(), Variables[i]);
+	}
+
+	//	vars
+	Matrix Gradient(varsCount, 1);
+	Matrix LastGradient(varsCount, 1);
+	Matrix Mimic_Hessian(varsCount, varsCount);
+	Matrix Delta_Gradient(varsCount, 1);
+	//	init mimic (with matrix I)
+	for (int i = 0; i < varsCount; i++)
+	{
+		for (int j = 0; j < varsCount; j++)
+		{
+			if(i == j)
+				Mimic_Hessian.Data[i][j] = 1.0;
+			else
+				Mimic_Hessian.Data[i][j] = 0;
+		}
+	}
+	//	init Gradient vals
+	for (int i = 0; i < varsCount; i++)
+	{
+		Gradient.Data[i][0] = CalculateByCoordinate(Position, First_Order[i]);
+	}
+	//	print init mimic
+	Answer.push_back("init Hessian: ");
+	CaCuMi::PrintMatrix(Mimic_Hessian, Answer);
+
+	//	thresholds
+	std::vector<double> LastPosition;
+	double DELTA_X_THRESHOLD = 0.00000001;
+	double DELTA_Y_THRESHOLD = 0.000001;
+	int ITER_THRESHOLD = 1000;
+	//	the optimization loop
+	for (int iter = 1; iter < ITER_THRESHOLD; iter++)
+	{
+		LastPosition = Position;
+
+		//	threshold
+		if (Length(CaCuMi::Matrix2Vector(Gradient)) < DELTA_X_THRESHOLD)	//Length(deltaX) < DELTA_X_THRESHOLD || 
+		{
+			break;
+		}
+
+		//	calc delta X, update position
+		std::vector<double> deltaX = CaCuMi::Matrix2Vector(CaCuMi::Multiply(Mimic_Hessian, Gradient));
+
+		//	argmin f(x + ad)
+		double Coefficient;
+		//	the calculation should know the: Direction, Position
+		Direction = deltaX;
+		Coefficient = goldenSectionSearch(-1.0, -resphi, 0.0, DELTA_Y_THRESHOLD);
+		//	apply delta x to position
+		deltaX = v_Multiply(deltaX, Coefficient);
+		Position = v_Sum(Position, deltaX);
+
+		//	calc new gradient with new position
+		LastGradient = Gradient;
+		for (int i = 0; i < varsCount; i++)
+		{
+			Gradient.Data[i][0] = CalculateByCoordinate(Position, First_Order[i]);
+		}
+		//	calc delta_Gradient
+		Delta_Gradient = CaCuMi::Sub(Gradient, LastGradient);
+
+		//	calc new Mimic
+		Matrix Matrix_dX = CaCuMi::Vector2Matrix(deltaX);
+		/// n*n:	CaCuMi::Multiply(Matrix_dX, CaCuMi::Transpose(Matrix_dX));
+		///	1*1:	CaCuMi::Multiply(CaCuMi::Transpose(Matrix_dX), Delta_Gradient);
+		///	n*n:
+		//CaCuMi::Multiply(CaCuMi::Multiply(Matrix_dX, CaCuMi::Transpose(Matrix_dX)), CaCuMi::Multiply(CaCuMi::Transpose(Matrix_dX), Delta_Gradient).Data[0][0]);
+		/// n*1:	CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient);
+		///	n*n:	CaCuMi::Multiply(CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient), CaCuMi::Transpose(CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient)));
+		//CaCuMi::Multiply(CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient), CaCuMi::Transpose(CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient)));
+		//	1*1:	CaCuMi::Multiply(CaCuMi::Transpose(Matrix_dX), CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient));
+		Mimic_Hessian = CaCuMi::Sum(
+			Mimic_Hessian, 
+			CaCuMi::Sub(
+				CaCuMi::Multiply(
+					CaCuMi::Multiply(
+						Matrix_dX, 
+						CaCuMi::Transpose(Matrix_dX)
+					),
+					(1.0 / CaCuMi::Multiply(CaCuMi::Transpose(Matrix_dX), Delta_Gradient).Data[0][0])
+				),
+				CaCuMi::Multiply(
+					CaCuMi::Multiply(
+						CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient),
+						CaCuMi::Transpose(CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient))
+					),
+					(1.0 / CaCuMi::Multiply(CaCuMi::Transpose(Matrix_dX), CaCuMi::Multiply(Mimic_Hessian, Delta_Gradient)).Data[0][0])
+				)
+			)
+		);
+
+		//	print Hessian
+		Answer.push_back("Quasi_Hessian: ");
+		CaCuMi::PrintMatrix(Mimic_Hessian, Answer);
+		//	print position
+		Answer.push_back("X: ");
+		Answer.push_back(Vector2String(Position));
+		Answer.push_back("");
+	}
+	//	minimizer
+	Answer.push_back("");
+	Answer.push_back("minimizer:");
+	Answer.push_back(Vector2String(Position));
+	//	value
+	Answer.push_back("value:");
+	Answer.push_back(std::to_string(CalculateByCoordinate(Position)));
+}
+
+
 
 #pragma region TrashCan
 //double goldenSectionSearch(double a, double b, double c, double tau)

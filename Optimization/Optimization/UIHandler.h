@@ -41,11 +41,12 @@ public:
 	void Powell_method();
 	double goldenSectionSearch(double a, double b, double c, double tau);
 	void Newton_method();
-
+	void QuasiNewton_method();
 	void SteepestDescent();
 
 	double CalculateByCoef(double coef);
-	double CalculateByCoordinate(std::vector<double> coor);
+	double CalculateByCoordinate(std::vector<double>& coor);
+	double CalculateByCoordinate(std::vector<double>& coor, Term* term);
 
 	std::vector<std::string> TEST();
 	void FixEquation();
