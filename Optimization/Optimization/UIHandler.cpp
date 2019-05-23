@@ -110,7 +110,7 @@ std::vector<std::string> UIHandler::DoMath()
 		break;
 	case ConjugateGradient:
 		Answer.push_back("[ConjugateGradient] : \t" + equations[equationIndex]);
-
+		ConjugateGradient_method();
 		break;
 	default:
 		Answer.push_back("[Method Error]");
@@ -122,6 +122,7 @@ std::vector<std::string> UIHandler::DoMath()
 	Answer.push_back("");
 	return Answer;
 }
+
 double UIHandler::CalculateByCoef(double coef)
 {
 	////////	this needs [Variables], [Position], [Direction] from global
@@ -196,7 +197,7 @@ double UIHandler::goldenSectionSearch(double a, double b, double c, double tau)
 		else
 			return goldenSectionSearch(a, x, b, tau);
 	}
-	
+
 	////	threshold - delta( b1, b2 )
 	//if (std::abs(a - c) < tau)
 	//	return (x + b) / 2;
@@ -233,7 +234,7 @@ std::vector<std::string> UIHandler::TEST()
 
 	//	get equation
 	Variables = m_Calculator.LoadFunction(equations[equationIndex]);
-	
+
 	// WILL: for test diff
 	/*std::map<char, double> will_input;
 	will_input['x'] = 1.0f;
@@ -319,14 +320,14 @@ void UIHandler::Powell_method()
 	}
 	//
 	Position = initPoint;
-	
+
 	std::vector<double> LastPosition;
 	double Value = CalculateByCoordinate(Position);
 	double LastValue;
 
-	double DELTA_X_THRESHOLD = 0.00000001;
-	double DELTA_Y_THRESHOLD = 0.00000001;
-	int ITER_THRESHOLD = 10000;
+	double DELTA_X_THRESHOLD = 0.00001;
+	double DELTA_Y_THRESHOLD = 0.0000001;
+	int ITER_THRESHOLD = 100;
 	for (int iter = 1; iter < ITER_THRESHOLD; iter++)
 	{
 		Answer.push_back("j = " + std::to_string(iter));
@@ -358,19 +359,17 @@ void UIHandler::Powell_method()
 		Value = CalculateByCoordinate(Position);
 
 		//	quadra scheme~
-		for (int i = 0; i < (varsCount-1); i++)
+		for (int i = 0; i < (varsCount - 1); i++)
 		{
 			Directions[i] = Directions[i + 1];
 		}
 		Direction = v_Subtract(Position, LastPosition);
 		Directions[varsCount - 1] = Direction;
-		
+
 		//	Golden again
 		double Coefficient;
 		std::pair<double, double> Interval;
 		Interval = FindInterval(Direction, Position, intervals);
-		///
-		std::cout << "GGG\n";
 		Coefficient = goldenSectionSearch(Interval.first, Interval.first + ((Interval.second - Interval.first)*resphi), Interval.second, DELTA_Y_THRESHOLD);
 		Position = v_Sum(Position, v_Multiply(Direction, Coefficient));
 
@@ -381,7 +380,7 @@ void UIHandler::Powell_method()
 		Answer.push_back("");
 
 		//	threshold ("Step 3"?)
-		if (DeltaVector(Position, LastPosition) < DELTA_X_THRESHOLD || std::abs(Value-LastValue) < DELTA_Y_THRESHOLD)
+		if (DeltaVector(Position, LastPosition) < DELTA_X_THRESHOLD || std::abs(Value - LastValue) < DELTA_Y_THRESHOLD)
 		{
 			break;
 		}
@@ -404,7 +403,7 @@ void UIHandler::Newton_method()
 	std::vector<std::vector<Term*>> Second_Order(varsCount);
 	for (int i = 0; i < varsCount; i++)
 		Second_Order[i] = std::vector<Term*>(varsCount);
-	
+
 	//	get 1st and 2nd partial derivertives
 	for (int i = 0; i < varsCount; i++)
 	{
@@ -420,9 +419,9 @@ void UIHandler::Newton_method()
 	Matrix Hessian(varsCount, varsCount);
 	//	thresholds
 	std::vector<double> LastPosition;
-	double DELTA_X_THRESHOLD = 0.00000001;
+	double DELTA_X_THRESHOLD = 0.00001;
 	double DELTA_Y_THRESHOLD = 0.00000001;
-	int ITER_THRESHOLD = 1000;
+	int ITER_THRESHOLD = 100;
 	for (int iter = 1; iter < ITER_THRESHOLD; iter++)
 	{
 		LastPosition = Position;
@@ -445,7 +444,7 @@ void UIHandler::Newton_method()
 		//	print Hessian inverse
 		Answer.push_back("Hessian Inverse: ");
 		CaCuMi::PrintMatrix(Hessian, Answer);
-		
+
 		//	calc delta X, update position
 		std::vector<double> deltaX = CaCuMi::Matrix2Vector(CaCuMi::Multiply(Hessian, Gradient));
 
@@ -484,7 +483,7 @@ void UIHandler::SteepestDescent()
 	std::vector<double> outputX = initPoint;
 	std::vector<double> h;
 	double lambda;
-	
+
 	// 整理 X
 	for (int i = 0; i < Variables.size(); i++)
 	{
@@ -527,7 +526,7 @@ void UIHandler::SteepestDescent()
 		Matrix h_matT(1, h.size());
 		for (int k = 0; k < h.size(); k++)
 		{
-			h_mat.Data[k][0] = h[k]; 
+			h_mat.Data[k][0] = h[k];
 			h_matT.Data[0][k] = h[k];
 		}
 		Matrix temp = CaCuMi::Multiply(h_matT, h_mat);
@@ -560,7 +559,7 @@ void UIHandler::SteepestDescent()
 			outputX[i] = outputX[i] + lambda * h[i];
 			if (intervals[i].first > outputX[i])
 				outputX[i] = intervals[i].first;
-			else if(intervals[i].second < outputX[i])
+			else if (intervals[i].second < outputX[i])
 				outputX[i] = intervals[i].second;
 		}
 
@@ -612,6 +611,7 @@ void UIHandler::SteepestDescent()
 	double min = m_Calculator.Caculate(inputX);
 	Answer.push_back("min = " + std::to_string(min));
 }
+
 void UIHandler::QuasiNewton_method()
 {
 	//	(DFP applied) (I used the true Hessian for init mimic instead of matrix_i)
@@ -691,7 +691,7 @@ void UIHandler::QuasiNewton_method()
 	for (int iter = 1; ; iter++)
 	{
 		LastPosition = Position;
-		
+
 		//	output
 		//	print Hessian
 		Answer.push_back("Quasi_Hessian: ");
@@ -708,11 +708,12 @@ void UIHandler::QuasiNewton_method()
 		{
 			break;
 		}
-		if (iter < ITER_THRESHOLD)
+		if (iter > ITER_THRESHOLD)
 		{
 			Answer.push_back("");
 			Answer.push_back("I GIVE UP!");
 			Answer.push_back("");
+			break;
 		}
 
 		///
@@ -764,11 +765,11 @@ void UIHandler::QuasiNewton_method()
 
 
 		Mimic_Hessian = CaCuMi::Sum(
-			Mimic_Hessian, 
+			Mimic_Hessian,
 			CaCuMi::Sub(
 				CaCuMi::Multiply(
 					CaCuMi::Multiply(
-						Matrix_dX, 
+						Matrix_dX,
 						CaCuMi::Transpose(Matrix_dX)
 					),
 					(1.0 / CaCuMi::Multiply(CaCuMi::Transpose(Matrix_dX), Delta_Gradient).Data[0][0])
@@ -792,7 +793,110 @@ void UIHandler::QuasiNewton_method()
 	Answer.push_back(std::to_string(CalculateByCoordinate(Position)));
 }
 
+void UIHandler::ConjugateGradient_method()
+{
+	Position = initPoint;
 
+	//	1st partial derivatives
+	std::vector<Term*> First_Order(varsCount);
+	for (int i = 0; i < varsCount; i++)
+		First_Order[i] = m_Calculator.PartialDiff(m_Calculator.myCurrentFunc(), Variables[i]);
+
+	//	vars
+	Matrix Gradient(varsCount, 1);		//	(n*1)
+	Matrix LastGradient(varsCount, 1);	//	(n*1)
+	double Value;
+	double LastValue;
+	//	calc value
+	Value = CalculateByCoordinate(Position);
+
+	//	thresholds
+	std::vector<double> LastPosition;
+	double ERROR_1 = 0.001;
+	double ERROR_2 = 0.001;
+	double ERROR_3 = 0.001;
+	double DELTA_Y_THRESHOLD = 0.000001;
+	int ITER_THRESHOLD = 100;
+	for (int iter = 1; ; iter++)
+	{
+		//	print i
+		Answer.push_back("i = " + std::to_string(iter));
+
+		//	update lasts
+		LastPosition = Position;
+		LastGradient = Gradient;
+
+		//	get new Gradient
+		for (int i = 0; i < varsCount; i++)
+			Gradient.Data[i][0] = CalculateByCoordinate(Position, First_Order[i]);
+		if (iter != 1)
+		{
+			//	calc beta
+			double Beta =
+				CaCuMi::Multiply(CaCuMi::Transpose(Gradient), Gradient).Data[0][0] /
+				CaCuMi::Multiply(CaCuMi::Transpose(LastGradient), LastGradient).Data[0][0];
+			//	fix Gradient
+			Answer.push_back("G:");
+			CaCuMi::PrintMatrix(Gradient, Answer);
+			Answer.push_back("L_G:");
+			CaCuMi::PrintMatrix(LastGradient, Answer);
+			Gradient = CaCuMi::Sum(Gradient, CaCuMi::Multiply(LastGradient, Beta));
+			//	print Beta
+			Answer.push_back("beta = " + std::to_string(Beta));
+		}
+
+		//	print Si(Gradient)
+		Answer.push_back("Si:");
+		CaCuMi::PrintMatrix(Gradient, Answer);
+
+		//	threshold_3
+		if (CaCuMi::Multiply(CaCuMi::Transpose(Gradient), Gradient).Data[0][0] < ERROR_3)
+			break;
+
+		//	calc delta X, update position
+		std::vector<double> deltaX = CaCuMi::Matrix2Vector(Gradient);
+		Direction = CaCuMi::Matrix2Vector(Gradient);
+
+		//	find Alpha
+		double Alpha;
+		Direction = deltaX;
+		std::pair<double, double> Interval;
+		Interval = FindInterval(Direction, Position, intervals);
+		Alpha = goldenSectionSearch(Interval.first, Interval.first + ((Interval.second - Interval.first)*resphi), Interval.second, DELTA_Y_THRESHOLD);
+		deltaX = v_Multiply(deltaX, Alpha);
+		Position = v_Sum(Position, deltaX);
+		//	print Alpha
+		Answer.push_back("alpha = " + std::to_string(Alpha));
+
+		//	calc Value
+		Value = CalculateByCoordinate(Position);
+
+		//	print position
+		Answer.push_back("Xi: ");
+		Answer.push_back(Vector2String(Position));
+		Answer.push_back("");
+
+		//	threshold
+		if (abs(Value - LastValue) < ERROR_1)
+			break;
+		if (Length(deltaX)*Length(deltaX) < ERROR_2)
+			break;
+		if (iter > ITER_THRESHOLD)
+		{
+			Answer.push_back("");
+			Answer.push_back("I GIVE UP!");
+			Answer.push_back("");
+			break;
+		}
+	}
+	//	minimizer
+	Answer.push_back("");
+	Answer.push_back("minimizer:");
+	Answer.push_back(Vector2String(Position));
+	//	value
+	Answer.push_back("value:");
+	Answer.push_back(std::to_string(CalculateByCoordinate(Position)));
+}
 
 #pragma region TrashCan
 //double goldenSectionSearch(double a, double b, double c, double tau)

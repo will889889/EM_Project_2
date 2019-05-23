@@ -43,6 +43,7 @@ public:
 	void Newton_method();
 	void QuasiNewton_method();
 	void SteepestDescent();
+	void ConjugateGradient_method();
 
 	double CalculateByCoef(double coef);
 	double CalculateByCoordinate(std::vector<double>& coor);
