@@ -63,7 +63,7 @@ double DeltaVector(std::vector<double> &v1, std::vector<double> &v2)
 	{
 		sum += (v1[i] - v2[i])*(v1[i] - v2[i]);
 	}
-	return sum;
+	return sqrt(sum);
 }
 double Length(const std::vector<double>& V)
 {

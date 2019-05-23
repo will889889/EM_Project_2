@@ -325,7 +325,7 @@ void UIHandler::Powell_method()
 	double Value = CalculateByCoordinate(Position);
 	double LastValue;
 
-	double DELTA_X_THRESHOLD = 0.00001;
+	double DELTA_X_THRESHOLD = 0.0000001;
 	double DELTA_Y_THRESHOLD = 0.0000001;
 	int ITER_THRESHOLD = 100;
 	for (int iter = 1; iter < ITER_THRESHOLD; iter++)
@@ -348,14 +348,13 @@ void UIHandler::Powell_method()
 			//	the calculation should know the: Direction, Position
 			Direction = Directions[i];
 			Coefficient = goldenSectionSearch(Interval.first, Interval.first + ((Interval.second - Interval.first)*resphi), Interval.second, DELTA_Y_THRESHOLD);
+			Answer.push_back("Alpha: " + std::to_string(Coefficient));
 			//
-			std::cout << "EO goldenSectionSearch\n";
 			Position = v_Sum(Position, v_Multiply(Direction, Coefficient));
 		}
 		Answer.push_back("i = " + std::to_string(varsCount));
 		Answer.push_back("X: " + Vector2String(Position));
-		///
-		std::cout << "CCC\n";
+
 		Value = CalculateByCoordinate(Position);
 
 		//	quadra scheme~
@@ -703,8 +702,8 @@ void UIHandler::QuasiNewton_method()
 
 		//	threshold
 		double length = Length(CaCuMi::Matrix2Vector(Gradient));
-		////std::cout << "\ni: " << iter << "\tm: " << length;
-		if (Length(CaCuMi::Matrix2Vector(Gradient)) < DELTA_X_THRESHOLD)	//Length(deltaX) < DELTA_X_THRESHOLD || 
+		std::cout << "\ni: " << iter << "\tm: " << length;
+		if (length*length < DELTA_X_THRESHOLD)	//Length(deltaX) < DELTA_X_THRESHOLD || 
 		{
 			break;
 		}
@@ -730,7 +729,7 @@ void UIHandler::QuasiNewton_method()
 		double Coefficient;
 		//	the calculation should know the: Direction, Position
 		Direction = deltaX;
-		Coefficient = goldenSectionSearch(-1.0, -resphi, 0.0, DELTA_Y_THRESHOLD);
+		Coefficient = goldenSectionSearch(-1.0, -resphi, 0.0, 0.00000001);
 		//	apply delta x to position
 		///
 		std::cout << "coef: " << Coefficient << "\n";
@@ -836,10 +835,6 @@ void UIHandler::ConjugateGradient_method()
 				CaCuMi::Multiply(CaCuMi::Transpose(Gradient), Gradient).Data[0][0] /
 				CaCuMi::Multiply(CaCuMi::Transpose(LastGradient), LastGradient).Data[0][0];
 			//	fix Gradient
-			Answer.push_back("G:");
-			CaCuMi::PrintMatrix(Gradient, Answer);
-			Answer.push_back("L_G:");
-			CaCuMi::PrintMatrix(LastGradient, Answer);
 			Gradient = CaCuMi::Sum(Gradient, CaCuMi::Multiply(LastGradient, Beta));
 			//	print Beta
 			Answer.push_back("beta = " + std::to_string(Beta));
@@ -862,7 +857,7 @@ void UIHandler::ConjugateGradient_method()
 		Direction = deltaX;
 		std::pair<double, double> Interval;
 		Interval = FindInterval(Direction, Position, intervals);
-		Alpha = goldenSectionSearch(Interval.first, Interval.first + ((Interval.second - Interval.first)*resphi), Interval.second, DELTA_Y_THRESHOLD);
+		Alpha = goldenSectionSearch(Interval.first, Interval.first + ((Interval.second - Interval.first)*resphi), Interval.second, 0.00000001);
 		deltaX = v_Multiply(deltaX, Alpha);
 		Position = v_Sum(Position, deltaX);
 		//	print Alpha
